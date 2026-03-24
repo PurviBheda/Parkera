@@ -13,7 +13,7 @@ import {
 import { format, addMinutes } from 'date-fns';
 import { toast } from 'sonner';
 // @ts-ignore
-import QRCodeImage from '../../assests/QR code.jpg';
+import QRCodeImage from '../../assets/QR code.jpg';
 
 export const BookingFlow = () => {
   const { t } = useTranslation();

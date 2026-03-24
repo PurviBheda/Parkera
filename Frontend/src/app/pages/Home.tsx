@@ -4,6 +4,7 @@ import { ParkingCircle, ArrowRight, ShieldCheck, MapPin, Zap, Smartphone, CheckC
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { useTranslation } from 'react-i18next';
+import parkingPhoto from '@/assets/parking photo.jpg';
 
 export const Home = () => {
   const { t } = useTranslation();
@@ -66,7 +67,7 @@ export const Home = () => {
           >
             <div className="relative rounded-[2rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.1)] border-8 border-white bg-gray-100 aspect-[4/5] md:aspect-square">
               <img
-                src="src\assests\parking photo.jpg"
+                src={parkingPhoto}
                 className="w-full h-full object-cover opacity-90"
                 alt="Parking Lot"
               />

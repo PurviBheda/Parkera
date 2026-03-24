@@ -8,7 +8,7 @@ import { ArrowLeft, ArrowRight, CheckCircle2, ShieldCheck, CreditCard, Car, Bike
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 // @ts-ignore
-import QRCodeImage from '../../assests/QR code.jpg';
+import QRCodeImage from '../../assets/QR code.jpg';
 import { useTranslation } from 'react-i18next';
 
 export const SelectReservedSlot = () => {

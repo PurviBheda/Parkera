@@ -10,7 +10,7 @@ import { AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import { FeedbackModal } from '../components/FeedbackModal';
 // @ts-ignore
-import QRCodeImage from '../../assests/QR code.jpg';
+import QRCodeImage from '../../assets/QR code.jpg';
 
 export const PenaltyPayment = () => {
     const { id } = useParams();
