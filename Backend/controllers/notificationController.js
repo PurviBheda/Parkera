@@ -23,228 +23,250 @@ const getTransporter = () => {
   return transporter;
 };
 
-export const sendWarningEmail = async (req, res) => {
-  try {
-    const { email, areaName, slotId, vehicleType, paidAmount, entryTime, expectedExit } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ message: "Email is required" });
-    }
-
-    const duration = entryTime && expectedExit
-      ? `${new Date(entryTime).toLocaleTimeString()} — ${new Date(expectedExit).toLocaleTimeString()}`
-      : "N/A";
-
-    await getTransporter().sendMail({
-      from: `"Parkera" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "⚠️ Parking Time Almost Up - Parkera",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #EAB308; text-align: center;">Parking Time Alert</h2>
-          <p>Hello,</p>
-          <p>This is a quick reminder from <strong>Parkera</strong> that your parking session is about to expire.</p>
-          <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #EAB308;">
-            <p><strong>Parking Lot:</strong> ${areaName || "N/A"}</p>
-            <p><strong>Slot:</strong> ${slotId || "N/A"}</p>
-            <p><strong>Vehicle:</strong> ${vehicleType || "N/A"}</p>
-            <p><strong>Amount Paid:</strong> ₹${paidAmount || 0}</p>
-            <p><strong>Duration:</strong> ${duration}</p>
-            <p style="color: red; font-weight: bold; font-size: 18px;">Time Remaining: ~5 Minutes</p>
-          </div>
-          <p>Please return to your vehicle or extend your session to avoid late penalties (₹2 per minute).</p>
-          <p>Thank you for using Parkera!</p>
-        </div>
-      `,
-    });
-
-    console.log("✅ Warning Email Sent To:", email);
-    res.status(200).json({ message: "Warning email sent successfully" });
-
-  } catch (error) {
-    console.error("SEND WARNING EMAIL ERROR:", error);
-    res.status(500).json({ message: "Failed to send warning email" });
-  }
-};
-
-export const sendPenaltyEmail = async (req, res) => {
-  try {
-    const { email, areaName, slotId, vehicleType, paidAmount, entryTime, expectedExit } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ message: "Email is required" });
-    }
-
-    const duration = entryTime && expectedExit
-      ? `${new Date(entryTime).toLocaleTimeString()} — ${new Date(expectedExit).toLocaleTimeString()}`
-      : "N/A";
-
-    await getTransporter().sendMail({
-      from: `"Parkera" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "🚨 Late Penalty Applied - Parkera",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: red; text-align: center;">Penalty Active</h2>
-          <p>Hello,</p>
-          <p>Your parking session has officially expired and a late penalty is now active.</p>
-          <div style="background: #fff5f5; border-left: 4px solid red; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <p><strong>Parking Lot:</strong> ${areaName || "N/A"}</p>
-            <p><strong>Slot:</strong> ${slotId || "N/A"}</p>
-            <p><strong>Vehicle:</strong> ${vehicleType || "N/A"}</p>
-            <p><strong>Amount Paid:</strong> ₹${paidAmount || 0}</p>
-            <p><strong>Duration:</strong> ${duration}</p>
-            <p style="color: red; font-weight: bold; font-size: 16px;">Penalty: ₹2 per minute</p>
-          </div>
-          <p>Please return to your vehicle immediately to end your session, or you will continue to be charged.</p>
-          <p>Thank you.</p>
-        </div>
-      `,
-    });
-
-    console.log("✅ Penalty Email Sent To:", email);
-    res.status(200).json({ message: "Penalty email sent successfully" });
-
-  } catch (error) {
-    console.error("SEND PENALTY EMAIL ERROR:", error);
-    res.status(500).json({ message: "Failed to send penalty email" });
-  }
-};
 
 // ==========================================
 // INTERNAL EMAIL FUNCTIONS (For Cron Jobs)
 // ==========================================
 
+const BASE_STYLE = `
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  max-width: 600px;
+  margin: auto;
+  padding: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  border: 1px solid #e2e8f0;
+`;
+
+const HEADER_STYLE = (color) => `
+  background-color: ${color};
+  padding: 30px 20px;
+  text-align: center;
+  color: white;
+`;
+
+const CONTENT_STYLE = `
+  padding: 30px;
+  background-color: #ffffff;
+  color: #1e293b;
+  line-height: 1.6;
+`;
+
+const CARD_STYLE = (borderColor) => `
+  background-color: #f8fafc;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 20px 0;
+  border-left: 5px solid ${borderColor};
+`;
+
+const BUTTON_STYLE = (color) => `
+  display: inline-block;
+  padding: 12px 24px;
+  background-color: ${color};
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: bold;
+  margin-top: 10px;
+`;
+
 export const sendBookingConfirmationInternal = async (email, areaName, slotId, vehicleType, startTime, endTime) => {
   try {
     if (!email) return;
-
     await getTransporter().sendMail({
       from: `"Parkera" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "🎉 Booking Confirmed - Parkera",
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #4CAF50; text-align: center;">Booking Confirmed!</h2>
-          <p>Hello,</p>
-          <p>Thank you for booking with Parkera. Your parking slot has been successfully reserved.</p>
-          <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4CAF50;">
-            <p><strong>Location:</strong> ${areaName}</p>
-            <p><strong>Slot:</strong> ${slotId}</p>
-            <p><strong>Vehicle:</strong> ${vehicleType}</p>
-            <p><strong>Start Time:</strong> ${new Date(startTime).toLocaleString()}</p>
-            <p><strong>Expected Exit:</strong> ${new Date(endTime).toLocaleString()}</p>
+        <div style="${BASE_STYLE}">
+          <div style="${HEADER_STYLE('#10B981')}">
+            <h1 style="margin:0; font-size: 24px;">Booking Confirmed!</h1>
           </div>
-          <p>Please ensure you exit before your expected time to avoid dynamic late penalties.</p>
-          <p>Safe Travels,<br>The Parkera Team</p>
+          <div style="${CONTENT_STYLE}">
+            <p>Hello,</p>
+            <p>Your parking spot is ready! We've successfully processed your booking at <strong>${areaName}</strong>.</p>
+            <div style="${CARD_STYLE('#10B981')}">
+              <p style="margin: 5px 0;"><strong>📍 Location:</strong> ${areaName}</p>
+              <p style="margin: 5px 0;"><strong>🔢 Slot:</strong> ${slotId}</p>
+              <p style="margin: 5px 0;"><strong>🚗 Vehicle:</strong> ${vehicleType}</p>
+              <p style="margin: 5px 0;"><strong>🕒 Entry:</strong> ${new Date(startTime).toLocaleString()}</p>
+              <p style="margin: 5px 0;"><strong>⌛ Expected Exit:</strong> ${new Date(endTime).toLocaleString()}</p>
+            </div>
+            <p>Please ensure you arrive on time. You can manage your booking via the dashboard below.</p>
+            <div style="text-align: center;">
+              <a href="https://parkera.vercel.app/dashboard" style="${BUTTON_STYLE('#10B981')}">View Dashboard</a>
+            </div>
+            <p style="margin-top: 30px; font-size: 13px; color: #64748b; text-align: center;">
+              Safe Travels,<br>The Parkera Team
+            </p>
+          </div>
         </div>
       `,
     });
     console.log("✅ Confirmation Email Sent To:", email);
   } catch (error) {
-    console.error("CONFIRMATION EMAIL ERROR (Internal):", error);
+    console.error("CONFIRMATION EMAIL ERROR:", error);
   }
 };
 
-export const sendWarningEmailInternal = async (email, bookingInfo) => {
+export const sendReservationConfirmationInternal = async (email, areaName, slotId, vehicleType, expiryTime) => {
   try {
     if (!email) return;
-    const { areaName, slotId, vehicleType, paidAmount, entryTime, expectedExit } = bookingInfo;
-    const duration = entryTime && expectedExit
-      ? `${new Date(entryTime).toLocaleTimeString()} — ${new Date(expectedExit).toLocaleTimeString()}`
-      : "N/A";
-
     await getTransporter().sendMail({
       from: `"Parkera" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: "⚠️ Parking Time Almost Up - Parkera",
+      subject: "🎫 Reservation Confirmed - Parkera",
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #EAB308; text-align: center;">Parking Time Alert</h2>
-          <p>Hello,</p>
-          <p>This is a quick reminder from <strong>Parkera</strong> that your parking session is about to expire.</p>
-          <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #EAB308;">
-             <p><strong>Parking Lot:</strong> ${areaName || "N/A"}</p>
-             <p><strong>Slot:</strong> ${slotId || "N/A"}</p>
-             <p><strong>Vehicle:</strong> ${vehicleType || "N/A"}</p>
-             <p><strong>Amount Paid:</strong> ₹${paidAmount || 0}</p>
-             <p><strong>Duration:</strong> ${duration}</p>
-             <p style="color: red; font-weight: bold; font-size: 18px;">Time Remaining: ~5 Minutes</p>
+        <div style="${BASE_STYLE}">
+          <div style="${HEADER_STYLE('#4F46E5')}">
+            <h1 style="margin:0; font-size: 24px;">Spot Reserved!</h1>
           </div>
-          <p>Please return to your vehicle or extend your session to avoid late penalties (₹2 per minute).</p>
-          <p>Thank you for using Parkera!</p>
+          <div style="${CONTENT_STYLE}">
+            <p>Hello,</p>
+            <p>We've reserved a slot for you. Please reach the parking area before your reservation expires.</p>
+            <div style="${CARD_STYLE('#4F46E5')}">
+              <p style="margin: 5px 0;"><strong>📍 Location:</strong> ${areaName || "Selected Mall"}</p>
+              <p style="margin: 5px 0;"><strong>🔢 Slot:</strong> ${slotId}</p>
+              <p style="margin: 5px 0;"><strong>🚗 Vehicle:</strong> ${vehicleType}</p>
+              <p style="margin: 5px 0; color: #ef4444;"><strong>⏰ Arrive Before:</strong> ${new Date(expiryTime).toLocaleString()}</p>
+            </div>
+            <p>Once you arrive, please check-in via the app to start your parking session.</p>
+            <div style="text-align: center;">
+              <a href="https://parkera.vercel.app/dashboard" style="${BUTTON_STYLE('#4F46E5')}">Check-In Now</a>
+            </div>
+            <p style="margin-top: 30px; font-size: 13px; color: #64748b; text-align: center;">
+              Thank you for choosing Parkera!
+            </p>
+          </div>
+        </div>
+      `,
+    });
+    console.log("✅ Reservation Email Sent To:", email);
+  } catch (error) {
+    console.error("RESERVATION EMAIL ERROR:", error);
+  }
+};
+
+export const sendWarningEmailInternal = async (email, info) => {
+  try {
+    if (!email) return;
+    const { areaName, slotId, expectedExit, isReservation } = info;
+    
+    await getTransporter().sendMail({
+      from: `"Parkera" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "⚠️ Time Almost Up - Parkera",
+      html: `
+        <div style="${BASE_STYLE}">
+          <div style="${HEADER_STYLE('#F59E0B')}">
+            <h1 style="margin:0; font-size: 24px;">Time Warning</h1>
+          </div>
+          <div style="${CONTENT_STYLE}">
+            <p>Hello,</p>
+            <p>This is a quick reminder that your ${isReservation ? 'reservation' : 'parking session'} at <strong>${areaName}</strong> is about to expire.</p>
+            <div style="${CARD_STYLE('#F59E0B')}">
+              <p style="margin: 5px 0;"><strong>📍 Location:</strong> ${areaName}</p>
+              <p style="margin: 5px 0;"><strong>🔢 Slot:</strong> ${slotId}</p>
+              <p style="margin: 15px 0; color: #ef4444; font-weight: bold; font-size: 18px;">Remaining: ~5 Minutes</p>
+              <p style="margin: 5px 0;"><strong>Deadline:</strong> ${new Date(expectedExit).toLocaleTimeString()}</p>
+            </div>
+            <p>Please ${isReservation ? 'arrive at your slot' : 'return to your vehicle'} immediately to avoid late penalties (₹2/min).</p>
+            <div style="text-align: center;">
+              <a href="https://parkera.vercel.app/dashboard" style="${BUTTON_STYLE('#F59E0B')}">Manage Session</a>
+            </div>
+          </div>
         </div>
       `,
     });
     console.log("✅ Warning Email Sent To:", email);
   } catch (error) {
-    console.error("WARNING EMAIL ERROR (Internal):", error);
+    console.error("WARNING EMAIL ERROR:", error);
   }
 };
 
-export const sendPenaltyEmailInternal = async (email, bookingInfo) => {
+export const sendPenaltyEmailInternal = async (email, info) => {
   try {
     if (!email) return;
-    const { areaName, slotId, vehicleType, paidAmount, entryTime, expectedExit } = bookingInfo;
-    const duration = entryTime && expectedExit
-      ? `${new Date(entryTime).toLocaleTimeString()} — ${new Date(expectedExit).toLocaleTimeString()}`
-      : "N/A";
+    const { areaName, slotId, isReservation } = info;
 
     await getTransporter().sendMail({
       from: `"Parkera" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: "🚨 Late Penalty Applied - Parkera",
+      subject: "🚨 Penalty Applied - Parkera",
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: red; text-align: center;">Penalty Active</h2>
-          <p>Hello,</p>
-          <p>Your parking session has officially expired and a late penalty is now active.</p>
-          <div style="background: #fff5f5; border-left: 4px solid red; padding: 15px; border-radius: 8px; margin: 20px 0;">
-             <p><strong>Parking Lot:</strong> ${areaName || "N/A"}</p>
-             <p><strong>Slot:</strong> ${slotId || "N/A"}</p>
-             <p><strong>Vehicle:</strong> ${vehicleType || "N/A"}</p>
-             <p><strong>Amount Paid:</strong> ₹${paidAmount || 0}</p>
-             <p><strong>Duration:</strong> ${duration}</p>
-             <p style="color: red; font-weight: bold; font-size: 16px;">Penalty: ₹2 per minute</p>
+        <div style="${BASE_STYLE}">
+          <div style="${HEADER_STYLE('#EF4444')}">
+            <h1 style="margin:0; font-size: 24px;">Penalty Active</h1>
           </div>
-           <p>Please return to your vehicle immediately to end your session, or you will continue to be charged.</p>
-           <p>Thank you.</p>
+          <div style="${CONTENT_STYLE}">
+            <p>Hello,</p>
+            <p>Your ${isReservation ? 'reservation' : 'parking session'} has expired and a late penalty is now being applied.</p>
+            <div style="${CARD_STYLE('#EF4444')}">
+              <p style="margin: 5px 0;"><strong>📍 Location:</strong> ${areaName}</p>
+              <p style="margin: 5px 0;"><strong>🔢 Slot:</strong> ${slotId}</p>
+              <p style="margin: 15px 0; color: #ef4444; font-weight: bold; font-size: 18px;">Rate: ₹2 per minute</p>
+            </div>
+            <p>Please complete your session immediately to stop further charges.</p>
+            <div style="text-align: center;">
+              <a href="https://parkera.vercel.app/dashboard" style="${BUTTON_STYLE('#EF4444')}">End Session Now</a>
+            </div>
+          </div>
         </div>
       `,
     });
     console.log("✅ Penalty Email Sent To:", email);
   } catch (error) {
-    console.error("PENALTY EMAIL ERROR (Internal):", error);
+    console.error("PENALTY EMAIL ERROR:", error);
   }
 };
 
 export const sendPassReceiptEmailInternal = async (email, passType, price, slotId, startDate, endDate) => {
   try {
     if (!email) return;
-
     await getTransporter().sendMail({
       from: `"Parkera" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "🎫 Parking Pass Receipt - Parkera",
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #EAB308; text-align: center;">Parking Pass Reserved!</h2>
-          <p>Hello,</p>
-          <p>Thank you for purchasing a reserved parking pass with Parkera.</p>
-          <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #EAB308;">
-            <p><strong>Pass Type:</strong> ${passType}</p>
-            <p><strong>Reserved Slot:</strong> ${slotId}</p>
-            <p><strong>Amount Paid:</strong> ₹${price}</p>
-            <p><strong>Valid From:</strong> ${new Date(startDate).toLocaleDateString()}</p>
-            <p><strong>Valid Until:</strong> ${new Date(endDate).toLocaleDateString()}</p>
+        <div style="${BASE_STYLE}">
+          <div style="${HEADER_STYLE('#8B5CF6')}">
+            <h1 style="margin:0; font-size: 24px;">Pass Confirmed!</h1>
           </div>
-          <p>Your slot is now exclusively reserved for you until the pass expires.</p>
-          <p>Safe Travels,<br>The Parkera Team</p>
+          <div style="${CONTENT_STYLE}">
+            <p>Hello,</p>
+            <p>Your premium parking pass has been successfully issued.</p>
+            <div style="${CARD_STYLE('#8B5CF6')}">
+              <p style="margin: 5px 0;"><strong>🎟️ Pass Type:</strong> ${passType}</p>
+              <p style="margin: 5px 0;"><strong>🔢 Reserved Slot:</strong> ${slotId}</p>
+              <p style="margin: 5px 0;"><strong>💰 Amount:</strong> ₹${price}</p>
+              <p style="margin: 5px 0;"><strong>📅 Valid From:</strong> ${new Date(startDate).toLocaleDateString()}</p>
+              <p style="margin: 5px 0;"><strong>📅 Valid Until:</strong> ${new Date(endDate).toLocaleDateString()}</p>
+            </div>
+            <p>This slot is now dedicated to you for the duration of the pass.</p>
+            <div style="text-align: center;">
+              <a href="https://parkera.vercel.app/dashboard" style="${BUTTON_STYLE('#8B5CF6')}">View Pass</a>
+            </div>
+          </div>
         </div>
       `,
     });
     console.log("✅ Pass Receipt Email Sent To:", email);
   } catch (error) {
-    console.error("PASS RECEIPT EMAIL ERROR (Internal):", error);
+    console.error("PASS RECEIPT EMAIL ERROR:", error);
   }
+};
+
+// Legacy Public Wrappers (Updated to use new design implicitly via internal call triggers)
+export const sendWarningEmail = async (req, res) => {
+  const { email, areaName, slotId, expectedExit } = req.body;
+  await sendWarningEmailInternal(email, { areaName, slotId, expectedExit, isReservation: false });
+  res.status(200).json({ message: "Warning email sent" });
+};
+
+export const sendPenaltyEmail = async (req, res) => {
+  const { email, areaName, slotId } = req.body;
+  await sendPenaltyEmailInternal(email, { areaName, slotId, isReservation: false });
+  res.status(200).json({ message: "Penalty email sent" });
 };

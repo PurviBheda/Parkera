@@ -1,6 +1,7 @@
 import Reservation from "../models/Reservation.js";
 import Booking from "../models/Booking.js";
 import User from "../models/User.js";
+import { sendReservationConfirmationInternal, sendBookingConfirmationInternal } from "./notificationController.js";
 
 // Haversine formula to calculate distance between two lat/lng points in km
 const haversineDistance = (lat1, lon1, lat2, lon2) => {
@@ -100,6 +101,14 @@ export const createReservation = async (req, res) => {
         const savedReservation = await newReservation.save();
         console.log("🎟️ Reservation Created:", savedReservation._id);
 
+        // Send Confirmation Email
+        if (userEmail) {
+            setImmediate(() => {
+                sendReservationConfirmationInternal(userEmail, "Selected Parking Area", slotId, vehicleType, expiryTime)
+                    .catch(err => console.error("📧 Reservation Email Error:", err));
+            });
+        }
+
         res.status(201).json({ message: "Reservation successful", reservation: savedReservation });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -139,6 +148,14 @@ export const checkInArrival = async (req, res) => {
         });
 
         const savedBooking = await newBooking.save();
+
+        // Send Booking Confirmation Email
+        if (userEmail) {
+            setImmediate(() => {
+                sendBookingConfirmationInternal(userEmail, areaName, reservation.slotId, reservation.vehicleType, reservation.parkingStartTime, expectedExit)
+                    .catch(err => console.error("📧 Check-In Email Error:", err));
+            });
+        }
 
         res.json({ message: "Check-In successful", booking: savedBooking });
     } catch (error) {

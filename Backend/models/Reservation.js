@@ -82,6 +82,14 @@ const reservationSchema = new mongoose.Schema(
             type: Date,
             default: null,
         },
+        warningEmailSent: {
+            type: Boolean,
+            default: false,
+        },
+        penaltyEmailSent: {
+            type: Boolean,
+            default: false,
+        },
     },
     { timestamps: true }
 );

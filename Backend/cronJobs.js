@@ -23,10 +23,8 @@ export const initializeCronJobs = () => {
                 const bookingInfo = {
                     areaName: booking.areaName || "N/A",
                     slotId: booking.slotId || "N/A",
-                    vehicleType: booking.vehicleType || "Car/Bike",
-                    paidAmount: booking.paidAmount || 0,
-                    entryTime: booking.entryTime,
                     expectedExit: booking.expectedExit,
+                    isReservation: false
                 };
 
                 // 1. Send Warning Email (if 5 minutes or less remaining, and not yet sent)
@@ -44,7 +42,39 @@ export const initializeCronJobs = () => {
                 }
             }
 
+            console.log("⏳ [Cron] Running automated reservation checks...");
+            const activeReservations = await Reservation.find({ reservationStatus: "reserved" });
+
+            for (const resv of activeReservations) {
+                if (!resv.userEmail) continue;
+
+                const expiryTime = new Date(resv.reservationExpiryTime);
+                const timeDiffMins = (expiryTime.getTime() - now.getTime()) / 60000;
+
+                const resvInfo = {
+                    areaName: "Selected Parking Area",
+                    slotId: resv.slotId || "N/A",
+                    expectedExit: resv.reservationExpiryTime,
+                    isReservation: true
+                };
+
+                // 1. Send Warning Email
+                if (timeDiffMins <= 5 && timeDiffMins > 0 && !resv.warningEmailSent) {
+                    await sendWarningEmailInternal(resv.userEmail, resvInfo);
+                    resv.warningEmailSent = true;
+                    await resv.save();
+                }
+
+                // 2. Send Penalty Email (Initial Alert)
+                if (timeDiffMins <= 0 && !resv.penaltyEmailSent) {
+                    await sendPenaltyEmailInternal(resv.userEmail, resvInfo);
+                    resv.penaltyEmailSent = true;
+                    await resv.save();
+                }
+            }
+
             console.log("⏳ [Cron] Running automated parking pass checks...");
+            // ... (rest of the existing logic for passes, reservation expiry, etc.)
             const expiredPasses = await ParkingPass.updateMany(
                 { status: "active", endDate: { $lt: now } },
                 { $set: { status: "expired" } }
