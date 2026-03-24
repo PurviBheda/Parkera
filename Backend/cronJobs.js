@@ -1,0 +1,100 @@
+import mongoose from "mongoose";
+import cron from "node-cron";
+import Booking from "./models/Booking.js";
+import ParkingPass from "./models/ParkingPass.js";
+import Reservation from "./models/Reservation.js";
+import User from "./models/User.js";
+import { sendWarningEmailInternal, sendPenaltyEmailInternal } from "./controllers/notificationController.js";
+
+// Run every 1 minute
+export const initializeCronJobs = () => {
+    cron.schedule("* * * * *", async () => {
+        try {
+            console.log("⏳ [Cron] Running automated booking checks...");
+            const activeBookings = await Booking.find({ status: "active" });
+            const now = new Date();
+
+            for (const booking of activeBookings) {
+                if (!booking.userEmail) continue;
+
+                const expectedExit = new Date(booking.expectedExit);
+                const timeDiffMins = (expectedExit.getTime() - now.getTime()) / 60000;
+
+                const bookingInfo = {
+                    areaName: booking.areaName || "N/A",
+                    slotId: booking.slotId || "N/A",
+                    vehicleType: booking.vehicleType || "Car/Bike",
+                    paidAmount: booking.paidAmount || 0,
+                    entryTime: booking.entryTime,
+                    expectedExit: booking.expectedExit,
+                };
+
+                // 1. Send Warning Email (if 5 minutes or less remaining, and not yet sent)
+                if (timeDiffMins <= 5 && timeDiffMins > 0 && !booking.warningEmailSent) {
+                    await sendWarningEmailInternal(booking.userEmail, bookingInfo);
+                    booking.warningEmailSent = true;
+                    await booking.save();
+                }
+
+                // 2. Send Penalty Email (if time has expired, and not yet sent)
+                if (timeDiffMins <= 0 && !booking.penaltyEmailSent) {
+                    await sendPenaltyEmailInternal(booking.userEmail, bookingInfo);
+                    booking.penaltyEmailSent = true;
+                    await booking.save();
+                }
+            }
+
+            console.log("⏳ [Cron] Running automated parking pass checks...");
+            const expiredPasses = await ParkingPass.updateMany(
+                { status: "active", endDate: { $lt: now } },
+                { $set: { status: "expired" } }
+            );
+            if (expiredPasses.modifiedCount > 0) {
+                console.log(`✅ [Cron] Expired ${expiredPasses.modifiedCount} parking passes.`);
+            }
+
+            console.log("⏳ [Cron] Running automated reservation expiry checks...");
+            const expiredReservations = await Reservation.find({
+                reservationStatus: "reserved",
+                reservationExpiryTime: { $lt: now }
+            });
+
+            for (const resv of expiredReservations) {
+                // Mark as expired and release slot
+                resv.reservationStatus = "expired";
+                resv.penaltyApplied = true;
+
+                const penaltyValue = 15;
+                resv.penaltyAmount = penaltyValue;
+                resv.isBlockingSlot = false;
+
+                if (resv.autoPenalty) {
+                    // AutoPay ON: automatically charge
+                    resv.penaltyStatus = "paid";
+                    resv.penaltyPaidAt = new Date();
+                    console.log(`💳 [Cron] AutoPay: Penalty ₹${penaltyValue} auto-charged for user ${resv.userId}`);
+                } else {
+                    // AutoPay OFF: mark as pending for manual payment
+                    resv.penaltyStatus = "pending";
+                    // Add to user's pending penalties
+                    const userQuery = mongoose.Types.ObjectId.isValid(resv.userId)
+                        ? { $or: [{ _id: resv.userId }, { email: resv.userId }] }
+                        : { email: resv.userId };
+
+                    await User.findOneAndUpdate(
+                        userQuery,
+                        { $inc: { pendingPenalties: penaltyValue } }
+                    );
+                    console.log(`⏳ [Cron] Penalty ₹${penaltyValue} pending for user ${resv.userId}`);
+                }
+
+                await resv.save();
+                console.log(`❌ [Cron] Reservation Expired for user ${resv.userId}`);
+            }
+
+        } catch (error) {
+            console.error("❌ [Cron] Error running cron checks:", error);
+        }
+    });
+    console.log("⏱️ Automated Email Cron Jobs Initialized");
+};
