@@ -54,7 +54,7 @@ export const AdminPanel = () => {
     if (user?.role === 'admin') {
       fetchPremiumPasses();
       // Fetch expired reservations
-      fetch('http://localhost:5000/api/reservations/all-expired')
+      fetch('https://parkera-backend.onrender.com/api/reservations/all-expired')
         .then(res => res.json())
         .then(data => setExpiredReservations(data.reservations || []))
         .catch(err => console.error('Failed to fetch expired reservations', err));
@@ -69,7 +69,7 @@ export const AdminPanel = () => {
   const fetchAllBookings = async () => {
     try {
       setIsBookingsLoading(true);
-      const res = await fetch("http://localhost:5000/api/bookings/all");
+      const res = await fetch("https://parkera-backend.onrender.com/api/bookings/all");
       if (res.ok) {
         const data = await res.json();
         setAllBookings(data.bookings || []);
@@ -83,7 +83,7 @@ export const AdminPanel = () => {
 
   const fetchPremiumPasses = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/passes/all');
+      const res = await fetch('https://parkera-backend.onrender.com/api/passes/all');
       if (res.ok) {
         const data = await res.json();
         setPremiumPasses(data.passes || []);
@@ -96,7 +96,7 @@ export const AdminPanel = () => {
   const fetchUsers = async () => {
     try {
       setIsUsersLoading(true);
-      const res = await fetch("http://localhost:5000/api/auth/users");
+      const res = await fetch("https://parkera-backend.onrender.com/api/auth/users");
       if (res.ok) {
         const data = await res.json();
         setUsersList(data);
@@ -126,7 +126,7 @@ export const AdminPanel = () => {
         }
       };
 
-      const res = await fetch("http://localhost:5000/api/parking-areas", {
+      const res = await fetch("https://parkera-backend.onrender.com/api/parking-areas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -149,7 +149,7 @@ export const AdminPanel = () => {
   const handleDeleteLot = async (id: string, name: string) => {
     if (!window.confirm(t('Are you sure you want to delete {{name}}?', { name }))) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/parking-areas/${id}`, {
+      const res = await fetch(`https://parkera-backend.onrender.com/api/parking-areas/${id}`, {
         method: "DELETE"
       });
       if (res.ok) {

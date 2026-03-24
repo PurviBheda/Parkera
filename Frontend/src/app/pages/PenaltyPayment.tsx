@@ -92,7 +92,7 @@ export const PenaltyPayment = () => {
 
         // Call backend to mark as completed and store penalty
         try {
-            await fetch('http://localhost:5000/api/bookings/pay-penalty', {
+            await fetch('https://parkera-backend.onrender.com/api/bookings/pay-penalty', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
