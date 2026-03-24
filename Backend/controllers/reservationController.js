@@ -102,9 +102,10 @@ export const createReservation = async (req, res) => {
         console.log("🎟️ Reservation Created:", savedReservation._id);
 
         // Send Confirmation Email
-        if (userEmail) {
+        const finalEmail = userEmail || userId;
+        if (finalEmail && finalEmail.includes("@")) {
             setImmediate(() => {
-                sendReservationConfirmationInternal(userEmail, "Selected Parking Area", slotId, vehicleType, expiryTime)
+                sendReservationConfirmationInternal(finalEmail, "Selected Parking Area", slotId, vehicleType, expiryTime)
                     .catch(err => console.error("📧 Reservation Email Error:", err));
             });
         }
@@ -150,9 +151,10 @@ export const checkInArrival = async (req, res) => {
         const savedBooking = await newBooking.save();
 
         // Send Booking Confirmation Email
-        if (userEmail) {
+        const finalEmail = userEmail || userId;
+        if (finalEmail && finalEmail.includes("@")) {
             setImmediate(() => {
-                sendBookingConfirmationInternal(userEmail, areaName, reservation.slotId, reservation.vehicleType, reservation.parkingStartTime, expectedExit)
+                sendBookingConfirmationInternal(finalEmail, areaName, reservation.slotId, reservation.vehicleType, reservation.parkingStartTime, expectedExit)
                     .catch(err => console.error("📧 Check-In Email Error:", err));
             });
         }

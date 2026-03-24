@@ -4,6 +4,11 @@ let transporter;
 
 const getTransporter = () => {
   if (!transporter) {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.error("❌ CRITICAL ERROR: EMAIL_USER or EMAIL_PASS environment variables are missing!");
+      return { sendMail: () => Promise.reject(new Error("Email credentials missing")) };
+    }
+
     transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 587,
@@ -16,8 +21,11 @@ const getTransporter = () => {
 
     // Verify connection once
     transporter.verify((error) => {
-      if (error) console.error("❌ SMTP Connection Error:", error);
-      else console.log("🚀 SMTP Server is ready");
+      if (error) {
+        console.error("❌ SMTP Connection Error Details:", error);
+      } else {
+        console.log("🚀 SMTP Server is ready and authenticated for:", process.env.EMAIL_USER);
+      }
     });
   }
   return transporter;
@@ -73,8 +81,12 @@ const BUTTON_STYLE = (color) => `
 `;
 
 export const sendBookingConfirmationInternal = async (email, areaName, slotId, vehicleType, startTime, endTime) => {
+  console.log(`📧 Attempting to send Booking Confirmation to: ${email}`);
   try {
-    if (!email) return;
+    if (!email) {
+      console.warn("⚠️ sendBookingConfirmationInternal: No email provided");
+      return;
+    }
     await getTransporter().sendMail({
       from: `"Parkera" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -105,15 +117,19 @@ export const sendBookingConfirmationInternal = async (email, areaName, slotId, v
         </div>
       `,
     });
-    console.log("✅ Confirmation Email Sent To:", email);
+    console.log("✅ Confirmation Email Sent Successfully To:", email);
   } catch (error) {
-    console.error("CONFIRMATION EMAIL ERROR:", error);
+    console.error("❌ CONFIRMATION EMAIL ERROR:", error.message, error.stack);
   }
 };
 
 export const sendReservationConfirmationInternal = async (email, areaName, slotId, vehicleType, expiryTime) => {
+  console.log(`📧 Attempting to send Reservation Confirmation to: ${email}`);
   try {
-    if (!email) return;
+    if (!email) {
+      console.warn("⚠️ sendReservationConfirmationInternal: No email provided");
+      return;
+    }
     await getTransporter().sendMail({
       from: `"Parkera" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -150,8 +166,12 @@ export const sendReservationConfirmationInternal = async (email, areaName, slotI
 };
 
 export const sendWarningEmailInternal = async (email, info) => {
+  console.log(`📧 Attempting to send Warning Email to: ${email}`);
   try {
-    if (!email) return;
+    if (!email) {
+      console.warn("⚠️ sendWarningEmailInternal: No email provided");
+      return;
+    }
     const { areaName, slotId, expectedExit, isReservation } = info;
     
     await getTransporter().sendMail({
@@ -187,8 +207,12 @@ export const sendWarningEmailInternal = async (email, info) => {
 };
 
 export const sendPenaltyEmailInternal = async (email, info) => {
+  console.log(`📧 Attempting to send Penalty Email to: ${email}`);
   try {
-    if (!email) return;
+    if (!email) {
+      console.warn("⚠️ sendPenaltyEmailInternal: No email provided");
+      return;
+    }
     const { areaName, slotId, isReservation } = info;
 
     await getTransporter().sendMail({
@@ -223,8 +247,12 @@ export const sendPenaltyEmailInternal = async (email, info) => {
 };
 
 export const sendPassReceiptEmailInternal = async (email, passType, price, slotId, startDate, endDate) => {
+  console.log(`📧 Attempting to send Pass Receipt to: ${email}`);
   try {
-    if (!email) return;
+    if (!email) {
+      console.warn("⚠️ sendPassReceiptEmailInternal: No email provided");
+      return;
+    }
     await getTransporter().sendMail({
       from: `"Parkera" <${process.env.EMAIL_USER}>`,
       to: email,
