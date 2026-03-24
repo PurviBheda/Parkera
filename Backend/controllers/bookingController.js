@@ -32,7 +32,7 @@ export const createBooking = async (req, res) => {
 
     // Fire Autonomous Confirmation Email
     if (userEmail) {
-      await sendBookingConfirmationInternal(userEmail, areaName, slotId, vehicleType || "Car/Bike", entryTime, expectedExit);
+      sendBookingConfirmationInternal(userEmail, areaName, slotId, vehicleType || "Car/Bike", entryTime, expectedExit);
     }
 
     res.status(201).json({ message: "Booking successful", booking: savedBooking });

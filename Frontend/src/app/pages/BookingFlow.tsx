@@ -286,7 +286,7 @@ export const BookingFlow = () => {
   const handlePayment = async () => {
     setIsProcessing(true);
     // Simulate payment gateway
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 800));
 
     // Save strictly validated card details for this user ID on successful payment if they used CC
     if (selectedPaymentMethod === 0) {

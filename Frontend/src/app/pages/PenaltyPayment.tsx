@@ -84,7 +84,7 @@ export const PenaltyPayment = () => {
     const handlePayment = async () => {
         setIsProcessing(true);
         // Simulate payment gateway processing
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 800));
 
         if (selectedPaymentMethod === 0) {
             localStorage.setItem(`parkflow_saved_card_${currentUserIdentifier}`, JSON.stringify(cardDetails));

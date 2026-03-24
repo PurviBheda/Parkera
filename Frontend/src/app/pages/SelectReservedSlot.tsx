@@ -92,7 +92,7 @@ export const SelectReservedSlot = () => {
     const handlePayment = async () => {
         setIsProcessing(true);
         // Simulate payment wait
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 800));
 
         if (selectedPaymentMethod === 0) {
             localStorage.setItem(`parkflow_saved_card_${currentUserIdentifier}`, JSON.stringify(cardDetails));
