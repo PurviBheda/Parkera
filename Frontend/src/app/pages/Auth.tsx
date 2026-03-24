@@ -16,9 +16,6 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { useTranslation } from 'react-i18next';
-import purviImg from '@/assets/purvi.jpeg';
-import urjaImg from '@/assets/urja.jpeg';
-import nidhiImg from '@/assets/nidhi.jpeg';
 
 export const Auth = ({ type = "login" }: { type?: "login" | "register" }) => {
   const { t } = useTranslation();
@@ -404,7 +401,7 @@ export const Auth = ({ type = "login" }: { type?: "login" | "register" }) => {
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 rounded-full border-2 border-[#EAB308] p-0.5">
                 <img
-                  src={purviImg}
+                  src="/purvi.jpeg"
                   className="w-full h-full object-cover rounded-full"
                   alt={t("User")}
                 />
@@ -417,7 +414,7 @@ export const Auth = ({ type = "login" }: { type?: "login" | "register" }) => {
               </div>
               <div className="w-12 h-12 rounded-full border-2 border-[#EAB308] p-0.5">
                 <img
-                  src={urjaImg}
+                  src="/urja.jpeg"
                   className="w-full h-full object-cover rounded-full"
                   alt={t("User")}
                 />
@@ -430,7 +427,7 @@ export const Auth = ({ type = "login" }: { type?: "login" | "register" }) => {
               </div>
               <div className="w-12 h-12 rounded-full border-2 border-[#EAB308] p-0.5">
                 <img
-                  src={nidhiImg}
+                  src="/nidhi.jpeg"
                   className="w-full h-full object-cover rounded-full"
                   alt={t("User")}
                 />
