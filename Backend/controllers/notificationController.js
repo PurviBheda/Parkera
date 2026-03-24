@@ -1,15 +1,26 @@
 import nodemailer from "nodemailer";
 
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+let transporter;
+
+const getTransporter = () => {
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    // Verify connection once
+    transporter.verify((error) => {
+      if (error) console.error("❌ SMTP Connection Error:", error);
+      else console.log("🚀 SMTP Server is ready");
+    });
+  }
+  return transporter;
 };
 
 export const sendWarningEmail = async (req, res) => {
@@ -20,12 +31,11 @@ export const sendWarningEmail = async (req, res) => {
       return res.status(400).json({ message: "Email is required" });
     }
 
-    const transporter = createTransporter();
     const duration = entryTime && expectedExit
       ? `${new Date(entryTime).toLocaleTimeString()} — ${new Date(expectedExit).toLocaleTimeString()}`
       : "N/A";
 
-    await transporter.sendMail({
+    await getTransporter().sendMail({
       from: `"Parkera" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "⚠️ Parking Time Almost Up - Parkera",
@@ -65,12 +75,11 @@ export const sendPenaltyEmail = async (req, res) => {
       return res.status(400).json({ message: "Email is required" });
     }
 
-    const transporter = createTransporter();
     const duration = entryTime && expectedExit
       ? `${new Date(entryTime).toLocaleTimeString()} — ${new Date(expectedExit).toLocaleTimeString()}`
       : "N/A";
 
-    await transporter.sendMail({
+    await getTransporter().sendMail({
       from: `"Parkera" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "🚨 Late Penalty Applied - Parkera",
@@ -109,9 +118,8 @@ export const sendPenaltyEmail = async (req, res) => {
 export const sendBookingConfirmationInternal = async (email, areaName, slotId, vehicleType, startTime, endTime) => {
   try {
     if (!email) return;
-    const transporter = createTransporter();
 
-    await transporter.sendMail({
+    await getTransporter().sendMail({
       from: `"Parkera" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "🎉 Booking Confirmed - Parkera",
@@ -141,13 +149,12 @@ export const sendBookingConfirmationInternal = async (email, areaName, slotId, v
 export const sendWarningEmailInternal = async (email, bookingInfo) => {
   try {
     if (!email) return;
-    const transporter = createTransporter();
     const { areaName, slotId, vehicleType, paidAmount, entryTime, expectedExit } = bookingInfo;
     const duration = entryTime && expectedExit
       ? `${new Date(entryTime).toLocaleTimeString()} — ${new Date(expectedExit).toLocaleTimeString()}`
       : "N/A";
 
-    await transporter.sendMail({
+    await getTransporter().sendMail({
       from: `"Parkera" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "⚠️ Parking Time Almost Up - Parkera",
@@ -178,13 +185,12 @@ export const sendWarningEmailInternal = async (email, bookingInfo) => {
 export const sendPenaltyEmailInternal = async (email, bookingInfo) => {
   try {
     if (!email) return;
-    const transporter = createTransporter();
     const { areaName, slotId, vehicleType, paidAmount, entryTime, expectedExit } = bookingInfo;
     const duration = entryTime && expectedExit
       ? `${new Date(entryTime).toLocaleTimeString()} — ${new Date(expectedExit).toLocaleTimeString()}`
       : "N/A";
 
-    await transporter.sendMail({
+    await getTransporter().sendMail({
       from: `"Parkera" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "🚨 Late Penalty Applied - Parkera",
@@ -215,9 +221,8 @@ export const sendPenaltyEmailInternal = async (email, bookingInfo) => {
 export const sendPassReceiptEmailInternal = async (email, passType, price, slotId, startDate, endDate) => {
   try {
     if (!email) return;
-    const transporter = createTransporter();
 
-    await transporter.sendMail({
+    await getTransporter().sendMail({
       from: `"Parkera" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "🎫 Parking Pass Receipt - Parkera",

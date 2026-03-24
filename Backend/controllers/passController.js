@@ -50,11 +50,15 @@ export const purchasePass = async (req, res) => {
             status: "active"
         });
 
+        const finalEmail = userEmail || userId;
         await newPass.save();
 
         // Send Email Receipt Async
-        if (userEmail) {
-            sendPassReceiptEmailInternal(userEmail, passType, price, slotId, startDate, endDate);
+        if (finalEmail) {
+            setImmediate(() => {
+                sendPassReceiptEmailInternal(finalEmail, passType, price, slotId, startDate, endDate)
+                    .catch(err => console.error("📧 Background Pass Email Error:", err));
+            });
         }
 
         res.status(201).json({ message: "Parking pass purchased successfully!", pass: newPass });

@@ -31,8 +31,11 @@ export const createBooking = async (req, res) => {
     console.log("🎟️ Booking Created:", savedBooking._id);
 
     // Fire Autonomous Confirmation Email
-    if (userEmail) {
-      sendBookingConfirmationInternal(userEmail, areaName, slotId, vehicleType || "Car/Bike", entryTime, expectedExit);
+    if (finalEmail) {
+      setImmediate(() => {
+        sendBookingConfirmationInternal(finalEmail, areaName, slotId, vehicleType || "Car/Bike", entryTime, expectedExit)
+          .catch(err => console.error("📧 Background Email Error:", err));
+      });
     }
 
     res.status(201).json({ message: "Booking successful", booking: savedBooking });
