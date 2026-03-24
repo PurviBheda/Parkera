@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { CheckCircle, Clock, ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router';
+import { useNavigate } from "react-router-dom";
 
 export const ParkingPass = () => {
     const { t } = useTranslation();

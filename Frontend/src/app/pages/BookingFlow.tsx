@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Navbar } from '../components/Navbar';
 import { useBooking } from '../context/BookingContext';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router';
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 import {
   Car, Bike, Smartphone, ArrowLeft, ArrowRight, Clock,

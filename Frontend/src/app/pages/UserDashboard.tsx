@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { format, differenceInMinutes, parseISO, isAfter } from 'date-fns';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import { FeedbackModal } from '../components/FeedbackModal';
 import { useTranslation } from 'react-i18next';
 import jsPDF from 'jspdf';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Navbar } from '../components/Navbar';
-import { useParams, useNavigate } from 'react-router';
+import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { useAuth } from '../context/AuthContext';
 import { useBooking } from '../context/BookingContext';
 import { CreditCard, AlertCircle, ArrowRight, ShieldCheck, Clock, MapPin, QrCode, Car, Info, Timer } from 'lucide-react';

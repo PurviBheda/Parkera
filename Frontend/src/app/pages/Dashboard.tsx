@@ -16,7 +16,7 @@ import {
 import { Navbar } from "../components/Navbar";
 import { MapComponent } from "../components/MapComponent";
 import { ParkingArea } from "../data/constants";
-import { useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useBooking } from "../context/BookingContext";
 import { useAuth } from "../context/AuthContext";
 import { useTranslation } from "react-i18next";
