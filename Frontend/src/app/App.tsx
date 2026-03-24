@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
+import { Routes, Route, Navigate } from 'react-router';
 import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { BookingProvider } from './context/BookingContext';
@@ -35,69 +35,67 @@ const ProtectedRoute = ({ children, adminOnly = false }: { children: React.React
 
 const App = () => {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <BookingProvider>
-          <div className="min-h-screen bg-white">
-            <Toaster position="top-center" expand={true} richColors closeButton />
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Auth type="login" />} />
-              <Route path="/register" element={<Auth type="register" />} />
-              <Route path="/verify-otp" element={<VerifyOTP />} />
-              <Route path="/terms" element={<TermsConditions />} />
+    <AuthProvider>
+      <BookingProvider>
+        <div className="min-h-screen bg-white">
+          <Toaster position="top-center" expand={true} richColors closeButton />
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Auth type="login" />} />
+            <Route path="/register" element={<Auth type="register" />} />
+            <Route path="/verify-otp" element={<VerifyOTP />} />
+            <Route path="/terms" element={<TermsConditions />} />
 
-              {/* Protected Routes */}
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
+            {/* Protected Routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
 
-              <Route path="/booking" element={
-                <ProtectedRoute>
-                  <BookingFlow />
-                </ProtectedRoute>
-              } />
+            <Route path="/booking" element={
+              <ProtectedRoute>
+                <BookingFlow />
+              </ProtectedRoute>
+            } />
 
-              <Route path="/passes" element={
-                <ProtectedRoute>
-                  <ParkingPass />
-                </ProtectedRoute>
-              } />
+            <Route path="/passes" element={
+              <ProtectedRoute>
+                <ParkingPass />
+              </ProtectedRoute>
+            } />
 
-              <Route path="/passes/select" element={
-                <ProtectedRoute>
-                  <SelectReservedSlot />
-                </ProtectedRoute>
-              } />
+            <Route path="/passes/select" element={
+              <ProtectedRoute>
+                <SelectReservedSlot />
+              </ProtectedRoute>
+            } />
 
-              <Route path="/history" element={
-                <ProtectedRoute>
-                  <UserDashboard />
-                </ProtectedRoute>
-              } />
+            <Route path="/history" element={
+              <ProtectedRoute>
+                <UserDashboard />
+              </ProtectedRoute>
+            } />
 
-              <Route path="/penalty/:id" element={
-                <ProtectedRoute>
-                  <PenaltyPayment />
-                </ProtectedRoute>
-              } />
+            <Route path="/penalty/:id" element={
+              <ProtectedRoute>
+                <PenaltyPayment />
+              </ProtectedRoute>
+            } />
 
-              <Route path="/admin" element={
-                <ProtectedRoute adminOnly={true}>
-                  <AdminPanel />
-                </ProtectedRoute>
-              } />
+            <Route path="/admin" element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminPanel />
+              </ProtectedRoute>
+            } />
 
-              {/* Catch all */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </div>
-        </BookingProvider>
-      </AuthProvider>
-    </BrowserRouter>
+            {/* Catch all */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      </BookingProvider>
+    </AuthProvider>
   );
 };
 
