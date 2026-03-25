@@ -29,9 +29,13 @@ app.use(cors({
 app.use(express.json({ limit: '15mb' }));
 
 /* ---------------- MONGODB CONNECTION ---------------- */
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected Successfully"))
-  .catch((err) => console.log("❌ MongoDB Connection Error:", err));
+if (!process.env.MONGO_URI) {
+  console.error("❌ CRITICAL: MONGO_URI is missing in environment variables!");
+} else {
+  mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log("✅ MongoDB Connected Successfully"))
+    .catch((err) => console.log("❌ MongoDB Connection Error:", err));
+}
 
 /* ---------------- ROUTES ---------------- */
 app.use("/api/bookings", bookingRoutes);
@@ -49,9 +53,17 @@ app.get("/", (req, res) => {
 /* ---------------- SERVER START ---------------- */
 const PORT = process.env.PORT || 5000;
 
-initializeCronJobs(); // Start automated email loop
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+console.log(`⏱️ Starting server on port ${PORT}...`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server fully operational on port ${PORT}`);
+  console.log(`🔗 Local URL: http://localhost:${PORT}`);
+  
+  // Start background tasks AFTER server is up
+  try {
+    initializeCronJobs();
+    console.log("⏱️ Automated Email Cron Jobs Initialized");
+  } catch (err) {
+    console.error("❌ Failed to initialize cron jobs:", err);
+  }
 });
 // Nodemon trigger
