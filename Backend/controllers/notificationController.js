@@ -11,20 +11,15 @@ const getTransporter = () => {
     }
 
     transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true, // Use SSL/TLS for port 465
+      service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
-      // Hard-force IPv4 to avoid ENETUNREACH on cloud environments (like Render)
+      // Hard-force IPv4 to avoid ENETUNREACH
       lookup: (hostname, options, callback) => {
         dns.lookup(hostname, { family: 4 }, callback);
       },
-      connectionTimeout: 15000, // 15 seconds
-      greetingTimeout: 15000,   // 15 seconds
-      socketTimeout: 20000,     // 20 seconds
     });
 
     // Verify connection once
