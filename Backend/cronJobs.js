@@ -14,6 +14,7 @@ export const initializeCronJobs = () => {
             const activeBookings = await Booking.find({ status: "active" });
             const now = new Date();
 
+            // 1. Automated Booking Checks
             for (const booking of activeBookings) {
                 if (!booking.userEmail) continue;
 
@@ -27,24 +28,29 @@ export const initializeCronJobs = () => {
                     isReservation: false
                 };
 
-                // 1. Send Warning Email (if 5 minutes or less remaining, and not yet sent)
+                // Send Warning Email (Background)
                 if (timeDiffMins <= 5 && timeDiffMins > 0 && !booking.warningEmailSent) {
-                    await sendWarningEmailInternal(booking.userEmail, bookingInfo);
                     booking.warningEmailSent = true;
-                    await booking.save();
+                    booking.save().then(() => {
+                        sendWarningEmailInternal(booking.userEmail, bookingInfo)
+                            .catch(err => console.error("📧 [Cron] Warning Email Error:", err));
+                    });
                 }
 
-                // 2. Send Penalty Email (if time has expired, and not yet sent)
+                // Send Penalty Email (Background)
                 if (timeDiffMins <= 0 && !booking.penaltyEmailSent) {
-                    await sendPenaltyEmailInternal(booking.userEmail, bookingInfo);
                     booking.penaltyEmailSent = true;
-                    await booking.save();
+                    booking.save().then(() => {
+                        sendPenaltyEmailInternal(booking.userEmail, bookingInfo)
+                            .catch(err => console.error("📧 [Cron] Penalty Email Error:", err));
+                    });
                 }
             }
 
             console.log("⏳ [Cron] Running automated reservation checks...");
             const activeReservations = await Reservation.find({ reservationStatus: "reserved" });
 
+            // 2. Automated Reservation Checks
             for (const resv of activeReservations) {
                 if (!resv.userEmail) continue;
 
@@ -58,18 +64,22 @@ export const initializeCronJobs = () => {
                     isReservation: true
                 };
 
-                // 1. Send Warning Email
+                // Send Warning Email (Background)
                 if (timeDiffMins <= 5 && timeDiffMins > 0 && !resv.warningEmailSent) {
-                    await sendWarningEmailInternal(resv.userEmail, resvInfo);
                     resv.warningEmailSent = true;
-                    await resv.save();
+                    resv.save().then(() => {
+                        sendWarningEmailInternal(resv.userEmail, resvInfo)
+                            .catch(err => console.error("📧 [Cron] Resv Warning Error:", err));
+                    });
                 }
 
-                // 2. Send Penalty Email (Initial Alert)
+                // Send Penalty Email (Background)
                 if (timeDiffMins <= 0 && !resv.penaltyEmailSent) {
-                    await sendPenaltyEmailInternal(resv.userEmail, resvInfo);
                     resv.penaltyEmailSent = true;
-                    await resv.save();
+                    resv.save().then(() => {
+                        sendPenaltyEmailInternal(resv.userEmail, resvInfo)
+                            .catch(err => console.error("📧 [Cron] Resv Penalty Error:", err));
+                    });
                 }
             }
 

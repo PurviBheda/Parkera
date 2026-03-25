@@ -94,12 +94,12 @@ export const BookingFlow = () => {
 
     const areaIdentifier = (selectedArea as any)?._id || selectedArea?.id;
     if (areaIdentifier) {
-      fetch(`https://parkera-backend.onrender.com/api/passes/slots?areaId=${areaIdentifier}`)
+      fetch(`${import.meta.env.VITE_API_URL}/api/passes/slots?areaId=${areaIdentifier}`)
         .then(res => res.json())
         .then(data => setReservedPassSlots(data.reservedSlots || []))
         .catch(err => console.error("Failed to fetch reserved pass slots:", err));
 
-      fetch(`https://parkera-backend.onrender.com/api/reservations/area/${areaIdentifier}`)
+      fetch(`${import.meta.env.VITE_API_URL}/api/reservations/area/${areaIdentifier}`)
         .then(res => res.json())
         .then(data => setEtaReservedSlots(data.reservations || []))
         .catch(err => console.error("Failed to fetch ETA reservations:", err));
@@ -107,7 +107,7 @@ export const BookingFlow = () => {
 
     const userId = (user as any)?._id || user?.email;
     if (userId) {
-      fetch(`https://parkera-backend.onrender.com/api/reservations/user/${userId}`)
+      fetch(`${import.meta.env.VITE_API_URL}/api/reservations/user/${userId}`)
         .then(res => res.json())
         .then(data => {
           if (data.reservation) {
@@ -128,7 +128,7 @@ export const BookingFlow = () => {
         .catch(err => console.error("Failed to fetch user reservation:", err));
 
       // Check for pending penalties
-      fetch(`https://parkera-backend.onrender.com/api/reservations/pending-penalty/${userId}`)
+      fetch(`${import.meta.env.VITE_API_URL}/api/reservations/pending-penalty/${userId}`)
         .then(res => res.json())
         .then(data => {
           if (data.hasPending) {
@@ -198,7 +198,7 @@ export const BookingFlow = () => {
         const destLat = (selectedArea as any).lat;
         const destLng = (selectedArea as any).lng;
 
-        fetch(`https://parkera-backend.onrender.com/api/reservations/calculate-eta?originLat=${latitude}&originLng=${longitude}&destLat=${destLat}&destLng=${destLng}`)
+        fetch(`${import.meta.env.VITE_API_URL}/api/reservations/calculate-eta?originLat=${latitude}&originLng=${longitude}&destLat=${destLat}&destLng=${destLng}`)
           .then(res => res.json())
           .then(data => {
             setEtaDetails(data);
@@ -220,7 +220,7 @@ export const BookingFlow = () => {
   const confirmReservation = async () => {
     setIsProcessing(true);
     try {
-      const res = await fetch(`https://parkera-backend.onrender.com/api/reservations/create`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/reservations/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -252,7 +252,7 @@ export const BookingFlow = () => {
     setIsProcessing(true);
     // Since we arrived safely, we need to let the backend know so it stops the expiry cron block.
     try {
-      const res = await fetch(`https://parkera-backend.onrender.com/api/reservations/check-in`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/reservations/check-in`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -285,8 +285,8 @@ export const BookingFlow = () => {
 
   const handlePayment = async () => {
     setIsProcessing(true);
-    // Simulate payment gateway
-    await new Promise(resolve => setTimeout(resolve, 800));
+    // Simulate payment gateway (Reduced delay)
+    await new Promise(resolve => setTimeout(resolve, 400));
 
     // Save strictly validated card details for this user ID on successful payment if they used CC
     if (selectedPaymentMethod === 0) {
@@ -313,7 +313,7 @@ export const BookingFlow = () => {
 
     // 2. Save Booking to Backend to Trigger Confirmation Email and Cron Jobs
     try {
-      await fetch('https://parkera-backend.onrender.com/api/bookings', {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/bookings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1198,7 +1198,7 @@ export const BookingFlow = () => {
                           setPenaltyPaymentProcessing(true);
                           try {
                             if (activeReservation?._id) {
-                              await fetch('https://parkera-backend.onrender.com/api/reservations/pay-penalty', {
+                              await fetch(`${import.meta.env.VITE_API_URL}/api/reservations/pay-penalty`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ reservationId: activeReservation._id })
@@ -1295,7 +1295,7 @@ export const BookingFlow = () => {
                   onClick={async () => {
                     setPenaltyPaymentProcessing(true);
                     try {
-                      await fetch('https://parkera-backend.onrender.com/api/reservations/pay-penalty', {
+                      await fetch(`${import.meta.env.VITE_API_URL}/api/reservations/pay-penalty`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ reservationId: pendingPenaltyData._id })

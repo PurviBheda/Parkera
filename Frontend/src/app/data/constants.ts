@@ -76,6 +76,7 @@ export interface Booking {
   id: string;
   userId: string;
   userEmail?: string;
+  userName?: string;
   areaId: string;
   areaName: string;
   vehicleType: "car" | "bike" | "scooty";

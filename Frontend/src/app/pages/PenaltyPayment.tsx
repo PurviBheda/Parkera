@@ -83,8 +83,8 @@ export const PenaltyPayment = () => {
 
     const handlePayment = async () => {
         setIsProcessing(true);
-        // Simulate payment gateway processing
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // Simulate payment gateway processing (Reduced from 800ms)
+        await new Promise(resolve => setTimeout(resolve, 400));
 
         if (selectedPaymentMethod === 0) {
             localStorage.setItem(`parkflow_saved_card_${currentUserIdentifier}`, JSON.stringify(cardDetails));
@@ -92,7 +92,7 @@ export const PenaltyPayment = () => {
 
         // Call backend to mark as completed and store penalty
         try {
-            await fetch('https://parkera-backend.onrender.com/api/bookings/pay-penalty', {
+            await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/pay-penalty`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 

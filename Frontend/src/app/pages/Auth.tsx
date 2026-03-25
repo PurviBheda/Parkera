@@ -52,7 +52,7 @@ export const Auth = ({ type = "login" }: { type?: "login" | "register" }) => {
         }
 
         setIsVerifying(true);
-        const res = await fetch("https://parkera-backend.onrender.com/api/auth/send-otp", {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/send-otp`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

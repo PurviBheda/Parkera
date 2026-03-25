@@ -89,9 +89,11 @@ export const payBookingPenalty = async (req, res) => {
     const { ticketId, penaltyAmount } = req.body;
     console.log("💰 Paying Penalty for ticketId:", ticketId, "Amount:", penaltyAmount);
 
+    console.time(`💰 Penalty-Pay-${ticketId}`);
     const booking = await Booking.findOne({ ticketId });
 
     if (!booking) {
+      console.timeEnd(`💰 Penalty-Pay-${ticketId}`);
       return res.status(404).json({ message: "Booking not found" });
     }
 
@@ -100,6 +102,7 @@ export const payBookingPenalty = async (req, res) => {
     booking.actualExit = new Date();
     await booking.save();
 
+    console.timeEnd(`💰 Penalty-Pay-${ticketId}`);
     console.log("✅ Penalty Paid & Booking Completed:", ticketId);
     res.json({ message: "Penalty paid and booking completed", booking });
   } catch (error) {
@@ -127,7 +130,17 @@ export const getBookingHistory = async (req, res) => {
 
 export const getAllBookings = async (req, res) => {
   try {
-    const bookings = await Booking.find().sort({ entryTime: -1 });
+    const { userId, status } = req.query;
+    let query = {};
+    if (userId) {
+      query.$or = [{ userId: userId }, { userEmail: userId }];
+    }
+    if (status) {
+      query.status = status;
+    }
+
+    // Limit to 50 for safety if no specific user is requested, or sort for recency
+    const bookings = await Booking.find(query).sort({ entryTime: -1 }).limit(userId ? 0 : 50);
     res.json({ bookings });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -45,7 +45,7 @@ export const ProfilePhotoManager: React.FC<ProfilePhotoManagerProps> = ({ isOpen
                 reader.readAsDataURL(file);
             });
 
-            const res = await fetch('https://parkera-backend.onrender.com/api/auth/profile-photo/upload', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/profile-photo/upload`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: user.id, photo: base64 }),
@@ -63,7 +63,7 @@ export const ProfilePhotoManager: React.FC<ProfilePhotoManagerProps> = ({ isOpen
         const index = (user.profilePhotos || []).indexOf(user.activePhoto);
         if (index === -1) return;
         try {
-            const res = await fetch('https://parkera-backend.onrender.com/api/auth/profile-photo/remove', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/profile-photo/remove`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: user.id, photoIndex: index }),
@@ -80,7 +80,7 @@ export const ProfilePhotoManager: React.FC<ProfilePhotoManagerProps> = ({ isOpen
         if (!fullName) { toast.error(t('Name cannot be empty.')); return; }
         setIsSaving(true);
         try {
-            const res = await fetch('https://parkera-backend.onrender.com/api/auth/update-name', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/update-name`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: user.id, name: fullName }),
@@ -211,7 +211,7 @@ export const ProfilePhotoManager: React.FC<ProfilePhotoManagerProps> = ({ isOpen
                                                                 onClick={async () => {
                                                                     if (photo === user.activePhoto) return;
                                                                     try {
-                                                                        const res = await fetch('https://parkera-backend.onrender.com/api/auth/profile-photo/set-active', {
+                                                                        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/profile-photo/set-active`, {
                                                                             method: 'PUT',
                                                                             headers: { 'Content-Type': 'application/json' },
                                                                             body: JSON.stringify({ userId: user.id, photoIndex: index }),

@@ -44,15 +44,12 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (!userId) return;
 
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/all`); // Fetch all then filter locally to avoid adding new backend endpoints if simple
+        // Fetch only active bookings for the current user (Optimized)
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/all?userId=${encodeURIComponent(userId)}&status=active`);
         if (res.ok) {
           const data = await res.json();
-          // Filter for active bookings of the current user
-          const myActive = (data.bookings || []).filter((b: any) => 
-            b.status === "active" && (b.userId === userId || b.userEmail === user.email)
-          );
+          const myActive = data.bookings || [];
           
-          // Merge with local storage but prioritize backend
           setActiveBookings(myActive);
           localStorage.setItem('parkflow_bookings', JSON.stringify(myActive));
         }
