@@ -17,6 +17,7 @@ const getTransporter = () => {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
+      family: 4, // Force IPv4 to avoid ENETUNREACH on cloud environments
       connectionTimeout: 10000, // 10 seconds
       greetingTimeout: 10000,   // 10 seconds
       socketTimeout: 15000,     // 15 seconds
