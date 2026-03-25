@@ -268,7 +268,7 @@ export const sendPenaltyEmail = async (req, res) => {
 
 export const sendTestEmail = async (req, res) => {
   const { email } = req.query;
-  const targetEmail = email || process.env.EMAIL_USER;
+  const targetEmail = email || process.env.EMAIL_FROM || "onboarding@resend.dev";
 
   console.log(`⚠️ [TEST] Manual SMTP test-email triggered for: ${targetEmail}`);
   
