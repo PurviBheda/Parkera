@@ -301,3 +301,57 @@ export const sendPenaltyEmail = async (req, res) => {
   await sendPenaltyEmailInternal(email, { areaName, slotId, isReservation: false });
   res.status(200).json({ message: "Penalty email sent" });
 };
+// ==========================================
+// TEST EMAIL FUNCTION (FOR DEBUGGING)
+// ==========================================
+
+export const sendTestEmail = async (req, res) => {
+  const { email } = req.query;
+  const targetEmail = email || process.env.EMAIL_USER;
+
+  console.log(`⚠️ [TEST] Manual test-email triggered for: ${targetEmail}`);
+  
+  try {
+    const tp = getTransporter();
+    
+    // Check if transporter is a dummy (missing credentials)
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        return res.status(500).json({ 
+            status: "FAILED", 
+            error: "Email credentials missing (EMAIL_USER or EMAIL_PASS not in env)" 
+        });
+    }
+
+    const mailOptions = {
+      from: `"Parkera Test" <${process.env.EMAIL_USER}>`,
+      to: targetEmail,
+      subject: "🚀 Parkera System Test Email",
+      text: "If you are reading this, your Parkera email notification system is working correctly!",
+      html: `
+        <div style="font-family: sans-serif; padding: 20px; border: 2px solid #EAB308; border-radius: 10px;">
+          <h2 style="color: #EAB308;">🚀 System Test Successful!</h2>
+          <p>Your Parkera email notification system is now <strong>fully operational</strong> on Render.</p>
+          <hr />
+          <p style="font-size: 11px; color: #999;">Test triggered at ${new Date().toLocaleString()}</p>
+        </div>
+      `,
+    };
+
+    const info = await tp.sendMail(mailOptions);
+    console.log("✅ [TEST] Test email sent successfully:", info.messageId);
+    
+    res.json({
+      status: "SUCCESS",
+      message: `Test email sent to ${targetEmail}`,
+      messageId: info.messageId,
+      user: process.env.EMAIL_USER
+    });
+  } catch (error) {
+    console.error("❌ [TEST] Manual test-email FAILED:", error);
+    res.status(500).json({
+      status: "FAILED",
+      error: error.message,
+      stack: error.stack
+    });
+  }
+};
