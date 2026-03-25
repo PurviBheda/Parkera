@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import dns from "dns";
 
 let transporter;
 
@@ -17,7 +18,10 @@ const getTransporter = () => {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
-      family: 4, // Force IPv4 to avoid ENETUNREACH on cloud environments
+      // Hard-force IPv4 to avoid ENETUNREACH on cloud environments (like Render)
+      lookup: (hostname, options, callback) => {
+        dns.lookup(hostname, { family: 4 }, callback);
+      },
       connectionTimeout: 15000, // 15 seconds
       greetingTimeout: 15000,   // 15 seconds
       socketTimeout: 20000,     // 20 seconds
