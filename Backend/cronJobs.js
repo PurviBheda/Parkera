@@ -31,19 +31,17 @@ export const initializeCronJobs = () => {
                 // Send Warning Email (Background)
                 if (timeDiffMins <= 5 && timeDiffMins > 0 && !booking.warningEmailSent) {
                     booking.warningEmailSent = true;
-                    booking.save().then(() => {
-                        sendWarningEmailInternal(booking.userEmail, bookingInfo)
-                            .catch(err => console.error("📧 [Cron] Warning Email Error:", err));
-                    });
+                    await booking.save();
+                    sendWarningEmailInternal(booking.userEmail, bookingInfo)
+                        .catch(err => console.error("📧 [Cron] Warning Email Error:", err));
                 }
 
                 // Send Penalty Email (Background)
                 if (timeDiffMins <= 0 && !booking.penaltyEmailSent) {
                     booking.penaltyEmailSent = true;
-                    booking.save().then(() => {
-                        sendPenaltyEmailInternal(booking.userEmail, bookingInfo)
-                            .catch(err => console.error("📧 [Cron] Penalty Email Error:", err));
-                    });
+                    await booking.save();
+                    sendPenaltyEmailInternal(booking.userEmail, bookingInfo)
+                        .catch(err => console.error("📧 [Cron] Penalty Email Error:", err));
                 }
             }
 
@@ -67,19 +65,17 @@ export const initializeCronJobs = () => {
                 // Send Warning Email (Background)
                 if (timeDiffMins <= 5 && timeDiffMins > 0 && !resv.warningEmailSent) {
                     resv.warningEmailSent = true;
-                    resv.save().then(() => {
-                        sendWarningEmailInternal(resv.userEmail, resvInfo)
-                            .catch(err => console.error("📧 [Cron] Resv Warning Error:", err));
-                    });
+                    await resv.save();
+                    sendWarningEmailInternal(resv.userEmail, resvInfo)
+                        .catch(err => console.error("📧 [Cron] Resv Warning Error:", err));
                 }
 
                 // Send Penalty Email (Background)
                 if (timeDiffMins <= 0 && !resv.penaltyEmailSent) {
                     resv.penaltyEmailSent = true;
-                    resv.save().then(() => {
-                        sendPenaltyEmailInternal(resv.userEmail, resvInfo)
-                            .catch(err => console.error("📧 [Cron] Resv Penalty Error:", err));
-                    });
+                    await resv.save();
+                    sendPenaltyEmailInternal(resv.userEmail, resvInfo)
+                        .catch(err => console.error("📧 [Cron] Resv Penalty Error:", err));
                 }
             }
 

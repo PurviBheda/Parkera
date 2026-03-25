@@ -1,6 +1,6 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
-import nodemailer from "nodemailer";
+import sendEmail from "../utils/emailService.js";
 
 /* ================= SEND OTP ================= */
 export const sendOTP = async (req, res) => {
@@ -49,33 +49,28 @@ export const sendOTP = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    /* ================= NODEMAILER ================= */
+    /* ================= EMAIL OTP ================= */
 
-    console.log("EMAIL USER:", process.env.EMAIL_USER);
-    console.log("EMAIL PASS:", process.env.EMAIL_PASS ? "Loaded" : "Not Loaded");
+    const subject = "Your OTP Code - Parkera";
+    const html = `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <div style="background-color: #6366f1; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; color: white;">
+                <h1 style="margin: 0; font-size: 24px;">Email Verification</h1>
+            </div>
+            <div style="padding: 20px; color: #1e293b; line-height: 1.6;">
+                <p>Hello,</p>
+                <p>To complete your registration at <strong>Parkera</strong>, please use the following One-Time Password (OTP):</p>
+                <div style="background-color: #f1f5f9; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+                    <h1 style="margin: 0; letter-spacing: 5px; color: #6366f1; font-size: 32px;">${otp}</h1>
+                </div>
+                <p style="color: #64748b; font-size: 14px;">This OTP will expire in <strong>5 minutes</strong>. If you did not request this code, please ignore this email.</p>
+                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+                <p style="text-align: center; font-size: 12px; color: #94a3b8;">&copy; 2026 Parkera Team. All rights reserved.</p>
+            </div>
+        </div>
+    `;
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    await transporter.sendMail({
-      from: `"Parkera" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "Your OTP Code - Parkera",
-      html: `
-        <h2>Email Verification</h2>
-        <p>Your OTP code is:</p>
-        <h1>${otp}</h1>
-        <p>This OTP will expire in 5 minutes.</p>
-      `,
-    });
-
+    await sendEmail(email, subject, html);
     console.log("✅ OTP Email Sent To:", email);
 
     res.status(200).json({ message: "OTP sent to your email" });

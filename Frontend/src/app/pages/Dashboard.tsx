@@ -137,7 +137,7 @@ export const Dashboard = () => {
             <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-4">
               {filteredAreas.map((area, i) => (
                 <motion.div
-                  key={area.id}
+                  key={(area as any)._id || area.id || i}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}

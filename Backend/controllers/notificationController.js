@@ -1,45 +1,12 @@
-import dns from "dns";
+import sendEmail from "../utils/emailService.js";
 
-// Since we are switching to Resend API (HTTPS) to bypass SMTP blocks on Render,
-// we no longer need the SMTP transporter. However, we'll keep the same
-// function signatures to avoid breaking the rest of the app.
+const dashboardUrl = process.env.CLIENT_URL || "https://parkera.vercel.app";
 
 /**
- * Helper to send email via Resend API (HTTPS)
- * This is 100% reliable on Render Free Tier.
+ * Helper to send email via the unified SMTP service
  */
-const sendViaResend = async (to, subject, html) => {
-  const apiKey = process.env.RESEND_API_KEY;
-  
-  if (!apiKey) {
-    console.error("❌ CRITICAL: RESEND_API_KEY is missing from environment variables!");
-    return { error: "Missing API Key" };
-  }
-
-  try {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        from: "Parkera <onboarding@resend.dev>", // Default for free/unverified accounts
-        to: [to],
-        subject: subject,
-        html: html,
-      }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || "Resend API Error");
-    }
-    return data;
-  } catch (error) {
-    console.error("❌ Resend API Error:", error.message);
-    throw error;
-  }
+const sendNotificationEmail = async (to, subject, html) => {
+  return await sendEmail(to, subject, html);
 };
 
 
@@ -99,7 +66,7 @@ export const sendBookingConfirmationInternal = async (email, areaName, slotId, v
       return;
     }
     
-    await sendViaResend(
+    await sendNotificationEmail(
       email,
       "🎉 Booking Confirmed - Parkera",
       `
@@ -119,7 +86,7 @@ export const sendBookingConfirmationInternal = async (email, areaName, slotId, v
             </div>
             <p>Please ensure you arrive on time. You can manage your booking via the dashboard below.</p>
             <div style="text-align: center;">
-              <a href="https://parkera.vercel.app/dashboard" style="${BUTTON_STYLE('#10B981')}">View Dashboard</a>
+              <a href="${dashboardUrl}/dashboard" style="${BUTTON_STYLE('#10B981')}">View Dashboard</a>
             </div>
             <p style="margin-top: 30px; font-size: 13px; color: #64748b; text-align: center;">
               Safe Travels,<br>The Parkera Team
@@ -139,7 +106,7 @@ export const sendReservationConfirmationInternal = async (email, areaName, slotI
   try {
     if (!email) return;
     
-    await sendViaResend(
+    await sendNotificationEmail(
         email,
         "🎫 Reservation Confirmed - Parkera",
         `
@@ -158,7 +125,7 @@ export const sendReservationConfirmationInternal = async (email, areaName, slotI
             </div>
             <p>Once you arrive, please check-in via the app to start your parking session.</p>
             <div style="text-align: center;">
-              <a href="https://parkera.vercel.app/dashboard" style="${BUTTON_STYLE('#4F46E5')}">Check-In Now</a>
+              <a href="${dashboardUrl}/dashboard" style="${BUTTON_STYLE('#4F46E5')}">Check-In Now</a>
             </div>
             <p style="margin-top: 30px; font-size: 13px; color: #64748b; text-align: center;">
               Thank you for choosing Parkera!
@@ -179,7 +146,7 @@ export const sendWarningEmailInternal = async (email, info) => {
     if (!email) return;
     const { areaName, slotId, expectedExit, isReservation } = info;
     
-    await sendViaResend(
+    await sendNotificationEmail(
       email,
       "⚠️ Time Almost Up - Parkera",
       `
@@ -198,7 +165,7 @@ export const sendWarningEmailInternal = async (email, info) => {
             </div>
             <p>Please ${isReservation ? 'arrive at your slot' : 'return to your vehicle'} immediately to avoid late penalties (₹2/min).</p>
             <div style="text-align: center;">
-              <a href="https://parkera.vercel.app/dashboard" style="${BUTTON_STYLE('#F59E0B')}">Manage Session</a>
+              <a href="${dashboardUrl}/dashboard" style="${BUTTON_STYLE('#F59E0B')}">Manage Session</a>
             </div>
           </div>
         </div>
@@ -216,7 +183,7 @@ export const sendPenaltyEmailInternal = async (email, info) => {
     if (!email) return;
     const { areaName, slotId, isReservation } = info;
 
-    await sendViaResend(
+    await sendNotificationEmail(
         email,
         "🚨 Penalty Applied - Parkera",
         `
@@ -234,7 +201,7 @@ export const sendPenaltyEmailInternal = async (email, info) => {
             </div>
             <p>Please complete your session immediately to stop further charges.</p>
             <div style="text-align: center;">
-              <a href="https://parkera.vercel.app/dashboard" style="${BUTTON_STYLE('#EF4444')}">End Session Now</a>
+              <a href="${dashboardUrl}/dashboard" style="${BUTTON_STYLE('#EF4444')}">End Session Now</a>
             </div>
           </div>
         </div>
@@ -250,7 +217,7 @@ export const sendPassReceiptEmailInternal = async (email, passType, price, slotI
   console.log(`📧 Attempting to send Pass Receipt (via Resend) to: ${email}`);
   try {
     if (!email) return;
-    await sendViaResend(
+    await sendNotificationEmail(
         email,
         "🎫 Parking Pass Receipt - Parkera",
         `
@@ -270,7 +237,7 @@ export const sendPassReceiptEmailInternal = async (email, passType, price, slotI
             </div>
             <p>This slot is now dedicated to you for the duration of the pass.</p>
             <div style="text-align: center;">
-              <a href="https://parkera.vercel.app/dashboard" style="${BUTTON_STYLE('#8B5CF6')}">View Pass</a>
+              <a href="${dashboardUrl}/dashboard" style="${BUTTON_STYLE('#8B5CF6')}">View Pass</a>
             </div>
           </div>
         </div>
@@ -303,39 +270,33 @@ export const sendTestEmail = async (req, res) => {
   const { email } = req.query;
   const targetEmail = email || process.env.EMAIL_USER;
 
-  console.log(`⚠️ [TEST] Manual Resend test-email triggered for: ${targetEmail}`);
+  console.log(`⚠️ [TEST] Manual SMTP test-email triggered for: ${targetEmail}`);
   
   try {
-    if (!process.env.RESEND_API_KEY) {
-        return res.status(500).json({ 
-            status: "FAILED", 
-            error: "RESEND_API_KEY environment variable is missing!" 
-        });
-    }
-
-    const data = await sendViaResend(
+    const data = await sendNotificationEmail(
       targetEmail,
-      "🚀 Parkera Resend API Test Email",
+      "🚀 Parkera Unified SMTP Test Email",
       `
-        <div style="font-family: sans-serif; padding: 20px; border: 2px solid #6366F1; border-radius: 10px;">
-          <h2 style="color: #6366F1;">🚀 Resend API Test Successful!</h2>
-          <p>Your Parkera email system is now running on the <strong>Resend API</strong> via HTTPS.</p>
-          <p>This bypasses all SMTP blocks and is much more reliable on Render.</p>
+        <div style="font-family: sans-serif; padding: 20px; border: 2px solid #10B981; border-radius: 10px;">
+          <h2 style="color: #10B981;">🚀 SMTP System Test Successful!</h2>
+          <p>Your Parkera email system is now running on the <strong>Unified SMTP Service</strong>.</p>
+          <p>This system replaces the Resend API and is fully configured for Render production.</p>
           <hr />
+          <p>Dashboard URL: <a href="${dashboardUrl}">${dashboardUrl}</a></p>
           <p style="font-size: 11px; color: #999;">Test triggered at ${new Date().toLocaleString()}</p>
         </div>
       `
     );
 
-    console.log("✅ [TEST] Resend test email sent successfully:", data.id);
+    console.log("✅ [TEST] SMTP test email sent successfully!");
     
     res.json({
       status: "SUCCESS",
-      message: `Test email sent via Resend API to ${targetEmail}`,
-      resendId: data.id
+      message: `Test email sent via Unified SMTP to ${targetEmail}`,
+      info: data
     });
   } catch (error) {
-    console.error("❌ [TEST] Manual Resend test-email FAILED:", error);
+    console.error("❌ [TEST] Manual SMTP test-email FAILED:", error);
     res.status(500).json({
       status: "FAILED",
       error: error.message
