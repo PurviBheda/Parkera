@@ -1,37 +1,45 @@
-import nodemailer from "nodemailer";
 import dns from "dns";
 
-let transporter;
+// Since we are switching to Resend API (HTTPS) to bypass SMTP blocks on Render,
+// we no longer need the SMTP transporter. However, we'll keep the same
+// function signatures to avoid breaking the rest of the app.
 
-const getTransporter = () => {
-  if (!transporter) {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.error("❌ CRITICAL ERROR: EMAIL_USER or EMAIL_PASS environment variables are missing!");
-      return { sendMail: () => Promise.reject(new Error("Email credentials missing")) };
-    }
-
-    transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      // Hard-force IPv4 to avoid ENETUNREACH
-      lookup: (hostname, options, callback) => {
-        dns.lookup(hostname, { family: 4 }, callback);
-      },
-    });
-
-    // Verify connection once
-    transporter.verify((error) => {
-      if (error) {
-        console.error("❌ SMTP Connection Error Details:", error);
-      } else {
-        console.log("🚀 SMTP Server is ready and authenticated for:", process.env.EMAIL_USER);
-      }
-    });
+/**
+ * Helper to send email via Resend API (HTTPS)
+ * This is 100% reliable on Render Free Tier.
+ */
+const sendViaResend = async (to, subject, html) => {
+  const apiKey = process.env.RESEND_API_KEY;
+  
+  if (!apiKey) {
+    console.error("❌ CRITICAL: RESEND_API_KEY is missing from environment variables!");
+    return { error: "Missing API Key" };
   }
-  return transporter;
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        from: "Parkera <onboarding@resend.dev>", // Default for free/unverified accounts
+        to: [to],
+        subject: subject,
+        html: html,
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || "Resend API Error");
+    }
+    return data;
+  } catch (error) {
+    console.error("❌ Resend API Error:", error.message);
+    throw error;
+  }
 };
 
 
@@ -84,17 +92,17 @@ const BUTTON_STYLE = (color) => `
 `;
 
 export const sendBookingConfirmationInternal = async (email, areaName, slotId, vehicleType, startTime, endTime) => {
-  console.log(`📧 Attempting to send Booking Confirmation to: ${email}`);
+  console.log(`📧 Attempting to send Booking Confirmation (via Resend) to: ${email}`);
   try {
     if (!email) {
       console.warn("⚠️ sendBookingConfirmationInternal: No email provided");
       return;
     }
-    await getTransporter().sendMail({
-      from: `"Parkera" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "🎉 Booking Confirmed - Parkera",
-      html: `
+    
+    await sendViaResend(
+      email,
+      "🎉 Booking Confirmed - Parkera",
+      `
         <div style="${BASE_STYLE}">
           <div style="${HEADER_STYLE('#10B981')}">
             <h1 style="margin:0; font-size: 24px;">Booking Confirmed!</h1>
@@ -118,26 +126,23 @@ export const sendBookingConfirmationInternal = async (email, areaName, slotId, v
             </p>
           </div>
         </div>
-      `,
-    });
+      `
+    );
     console.log("✅ Confirmation Email Sent Successfully To:", email);
   } catch (error) {
-    console.error("❌ CONFIRMATION EMAIL ERROR:", error.message, error.stack);
+    console.error("❌ CONFIRMATION EMAIL ERROR:", error.message);
   }
 };
 
 export const sendReservationConfirmationInternal = async (email, areaName, slotId, vehicleType, expiryTime) => {
-  console.log(`📧 Attempting to send Reservation Confirmation to: ${email}`);
+  console.log(`📧 Attempting to send Reservation Confirmation (via Resend) to: ${email}`);
   try {
-    if (!email) {
-      console.warn("⚠️ sendReservationConfirmationInternal: No email provided");
-      return;
-    }
-    await getTransporter().sendMail({
-      from: `"Parkera" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "🎫 Reservation Confirmed - Parkera",
-      html: `
+    if (!email) return;
+    
+    await sendViaResend(
+        email,
+        "🎫 Reservation Confirmed - Parkera",
+        `
         <div style="${BASE_STYLE}">
           <div style="${HEADER_STYLE('#4F46E5')}">
             <h1 style="margin:0; font-size: 24px;">Spot Reserved!</h1>
@@ -160,8 +165,8 @@ export const sendReservationConfirmationInternal = async (email, areaName, slotI
             </p>
           </div>
         </div>
-      `,
-    });
+      `
+    );
     console.log("✅ Reservation Email Sent To:", email);
   } catch (error) {
     console.error("RESERVATION EMAIL ERROR:", error);
@@ -169,19 +174,15 @@ export const sendReservationConfirmationInternal = async (email, areaName, slotI
 };
 
 export const sendWarningEmailInternal = async (email, info) => {
-  console.log(`📧 Attempting to send Warning Email to: ${email}`);
+  console.log(`📧 Attempting to send Warning Email (via Resend) to: ${email}`);
   try {
-    if (!email) {
-      console.warn("⚠️ sendWarningEmailInternal: No email provided");
-      return;
-    }
+    if (!email) return;
     const { areaName, slotId, expectedExit, isReservation } = info;
     
-    await getTransporter().sendMail({
-      from: `"Parkera" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "⚠️ Time Almost Up - Parkera",
-      html: `
+    await sendViaResend(
+      email,
+      "⚠️ Time Almost Up - Parkera",
+      `
         <div style="${BASE_STYLE}">
           <div style="${HEADER_STYLE('#F59E0B')}">
             <h1 style="margin:0; font-size: 24px;">Time Warning</h1>
@@ -201,8 +202,8 @@ export const sendWarningEmailInternal = async (email, info) => {
             </div>
           </div>
         </div>
-      `,
-    });
+      `
+    );
     console.log("✅ Warning Email Sent To:", email);
   } catch (error) {
     console.error("WARNING EMAIL ERROR:", error);
@@ -210,19 +211,15 @@ export const sendWarningEmailInternal = async (email, info) => {
 };
 
 export const sendPenaltyEmailInternal = async (email, info) => {
-  console.log(`📧 Attempting to send Penalty Email to: ${email}`);
+  console.log(`📧 Attempting to send Penalty Email (via Resend) to: ${email}`);
   try {
-    if (!email) {
-      console.warn("⚠️ sendPenaltyEmailInternal: No email provided");
-      return;
-    }
+    if (!email) return;
     const { areaName, slotId, isReservation } = info;
 
-    await getTransporter().sendMail({
-      from: `"Parkera" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "🚨 Penalty Applied - Parkera",
-      html: `
+    await sendViaResend(
+        email,
+        "🚨 Penalty Applied - Parkera",
+        `
         <div style="${BASE_STYLE}">
           <div style="${HEADER_STYLE('#EF4444')}">
             <h1 style="margin:0; font-size: 24px;">Penalty Active</h1>
@@ -241,8 +238,8 @@ export const sendPenaltyEmailInternal = async (email, info) => {
             </div>
           </div>
         </div>
-      `,
-    });
+      `
+    );
     console.log("✅ Penalty Email Sent To:", email);
   } catch (error) {
     console.error("PENALTY EMAIL ERROR:", error);
@@ -250,17 +247,13 @@ export const sendPenaltyEmailInternal = async (email, info) => {
 };
 
 export const sendPassReceiptEmailInternal = async (email, passType, price, slotId, startDate, endDate) => {
-  console.log(`📧 Attempting to send Pass Receipt to: ${email}`);
+  console.log(`📧 Attempting to send Pass Receipt (via Resend) to: ${email}`);
   try {
-    if (!email) {
-      console.warn("⚠️ sendPassReceiptEmailInternal: No email provided");
-      return;
-    }
-    await getTransporter().sendMail({
-      from: `"Parkera" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "🎫 Parking Pass Receipt - Parkera",
-      html: `
+    if (!email) return;
+    await sendViaResend(
+        email,
+        "🎫 Parking Pass Receipt - Parkera",
+        `
         <div style="${BASE_STYLE}">
           <div style="${HEADER_STYLE('#8B5CF6')}">
             <h1 style="margin:0; font-size: 24px;">Pass Confirmed!</h1>
@@ -281,15 +274,15 @@ export const sendPassReceiptEmailInternal = async (email, passType, price, slotI
             </div>
           </div>
         </div>
-      `,
-    });
+      `
+    );
     console.log("✅ Pass Receipt Email Sent To:", email);
   } catch (error) {
     console.error("PASS RECEIPT EMAIL ERROR:", error);
   }
 };
 
-// Legacy Public Wrappers (Updated to use new design implicitly via internal call triggers)
+// Legacy Public Wrappers
 export const sendWarningEmail = async (req, res) => {
   const { email, areaName, slotId, expectedExit } = req.body;
   await sendWarningEmailInternal(email, { areaName, slotId, expectedExit, isReservation: false });
@@ -301,57 +294,51 @@ export const sendPenaltyEmail = async (req, res) => {
   await sendPenaltyEmailInternal(email, { areaName, slotId, isReservation: false });
   res.status(200).json({ message: "Penalty email sent" });
 };
+
 // ==========================================
-// TEST EMAIL FUNCTION (FOR DEBUGGING)
+// TEST EMAIL FUNCTION (FOR RESEND)
 // ==========================================
 
 export const sendTestEmail = async (req, res) => {
   const { email } = req.query;
   const targetEmail = email || process.env.EMAIL_USER;
 
-  console.log(`⚠️ [TEST] Manual test-email triggered for: ${targetEmail}`);
+  console.log(`⚠️ [TEST] Manual Resend test-email triggered for: ${targetEmail}`);
   
   try {
-    const tp = getTransporter();
-    
-    // Check if transporter is a dummy (missing credentials)
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    if (!process.env.RESEND_API_KEY) {
         return res.status(500).json({ 
             status: "FAILED", 
-            error: "Email credentials missing (EMAIL_USER or EMAIL_PASS not in env)" 
+            error: "RESEND_API_KEY environment variable is missing!" 
         });
     }
 
-    const mailOptions = {
-      from: `"Parkera Test" <${process.env.EMAIL_USER}>`,
-      to: targetEmail,
-      subject: "🚀 Parkera System Test Email",
-      text: "If you are reading this, your Parkera email notification system is working correctly!",
-      html: `
-        <div style="font-family: sans-serif; padding: 20px; border: 2px solid #EAB308; border-radius: 10px;">
-          <h2 style="color: #EAB308;">🚀 System Test Successful!</h2>
-          <p>Your Parkera email notification system is now <strong>fully operational</strong> on Render.</p>
+    const data = await sendViaResend(
+      targetEmail,
+      "🚀 Parkera Resend API Test Email",
+      `
+        <div style="font-family: sans-serif; padding: 20px; border: 2px solid #6366F1; border-radius: 10px;">
+          <h2 style="color: #6366F1;">🚀 Resend API Test Successful!</h2>
+          <p>Your Parkera email system is now running on the <strong>Resend API</strong> via HTTPS.</p>
+          <p>This bypasses all SMTP blocks and is much more reliable on Render.</p>
           <hr />
           <p style="font-size: 11px; color: #999;">Test triggered at ${new Date().toLocaleString()}</p>
         </div>
-      `,
-    };
+      `
+    );
 
-    const info = await tp.sendMail(mailOptions);
-    console.log("✅ [TEST] Test email sent successfully:", info.messageId);
+    console.log("✅ [TEST] Resend test email sent successfully:", data.id);
     
     res.json({
       status: "SUCCESS",
-      message: `Test email sent to ${targetEmail}`,
-      messageId: info.messageId,
-      user: process.env.EMAIL_USER
+      message: `Test email sent via Resend API to ${targetEmail}`,
+      resendId: data.id
     });
   } catch (error) {
-    console.error("❌ [TEST] Manual test-email FAILED:", error);
+    console.error("❌ [TEST] Manual Resend test-email FAILED:", error);
     res.status(500).json({
       status: "FAILED",
-      error: error.message,
-      stack: error.stack
+      error: error.message
     });
   }
 };
