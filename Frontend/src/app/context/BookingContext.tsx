@@ -68,15 +68,7 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchActiveBookings();
   }, []);
 
-  useEffect(() => {
-    const slotsToClear = ['B-5', 'C-3'];
-    const hasSlotsToClear = activeBookings.some((b: Booking) => slotsToClear.includes(b.slotId) && b.status === 'active');
-    if (hasSlotsToClear) {
-      const newBookings = activeBookings.filter((b: Booking) => !(slotsToClear.includes(b.slotId) && b.status === 'active'));
-      setActiveBookings(newBookings);
-      localStorage.setItem('parkflow_bookings', JSON.stringify(newBookings));
-    }
-  }, [activeBookings]);
+  // Removed hardcoded activeBookings.filter for slotsToClear
 
   const addBooking = (booking: Booking) => {
 
