@@ -39,8 +39,8 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     const fetchActiveBookings = async () => {
-      const user = JSON.parse(localStorage.getItem("parkera_user") || "{}");
-      const userId = user._id || user.email;
+      const user = JSON.parse(localStorage.getItem("parkflow_user") || "{}");
+      const userId = user.id || user.email;
       if (!userId) return;
 
       try {
@@ -48,7 +48,13 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/all?userId=${encodeURIComponent(userId)}&status=active`);
         if (res.ok) {
           const data = await res.json();
-          const myActive = data.bookings || [];
+          const myActive = (data.bookings || []).map((b: any) => ({
+            ...b,
+            id: b.id || b.ticketId || b._id,
+            startTime: b.startTime || b.entryTime,
+            endTime: b.endTime || b.expectedExit,
+            totalCost: b.totalCost || b.paidAmount || 0
+          }));
           
           setActiveBookings(myActive);
           localStorage.setItem('parkflow_bookings', JSON.stringify(myActive));
@@ -75,7 +81,7 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addBooking = (booking: Booking) => {
 
     // Get logged in user from localStorage
-    const user = JSON.parse(localStorage.getItem("parkera_user") || "{}");
+    const user = JSON.parse(localStorage.getItem("parkflow_user") || "{}");
 
     const bookingWithEmail = {
       ...booking,
