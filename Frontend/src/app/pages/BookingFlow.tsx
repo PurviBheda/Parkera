@@ -310,7 +310,7 @@ export const BookingFlow = () => {
 
     addBooking({
       id,
-      userId: (user as any)?.id || (user as any)?._id || user?.email || 'unknown',
+      userId: user?.id || (user as any)?._id || user?.email || 'unknown',
       areaId: (selectedArea as any)?._id || selectedArea?.id,
       areaName: selectedArea.name,
       vehicleType,
@@ -328,7 +328,7 @@ export const BookingFlow = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: (user as any)?.id || (user as any)?._id || user?.email || 'guest',
+          userId: user?.id || (user as any)?._id || user?.email || 'guest',
           ticketId: id,
           areaId: areaIdentifier,
           userEmail: user?.email,

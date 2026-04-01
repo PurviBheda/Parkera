@@ -175,9 +175,14 @@ export const UserDashboard = () => {
   const { activeBookings, completeBooking, submitFeedback } = useBooking();
   const navigate = useNavigate();
 
-  const currentUserIdentifier = (user as any)?.id || (user as any)?._id || user?.email;
+  const currentUserIdentifier = user?.id || (user as any)?._id || user?.email;
   const myActiveBookings = activeBookings.filter((b: any) =>
-    b.status === "active" && (b.userId === currentUserIdentifier || b.userEmail === user?.email)
+    b.status === "active" && (
+      b.userId === currentUserIdentifier || 
+      b.userEmail === user?.email || 
+      b.userId === user?.name || 
+      b.userName === user?.name
+    )
   );
 
   const [exitModal, setExitModal] = useState<any>(null);

@@ -49,20 +49,30 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (!userId) return;
 
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/all?userId=${encodeURIComponent(userId)}&status=active`);
-        if (res.ok) {
-          const data = await res.json();
-          const myActive = (data.bookings || []).map((b: any) => ({
-            ...b,
-            id: b.id || b.ticketId || b._id,
-            startTime: b.startTime || b.entryTime,
-            endTime: b.endTime || b.expectedExit,
-            totalCost: b.totalCost || b.paidAmount || 0
-          }));
-          
-          setActiveBookings(myActive);
-          localStorage.setItem('parkflow_bookings', JSON.stringify(myActive));
+        // Try fetching by ObjectId first
+        let res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/all?userId=${encodeURIComponent(user.id || user._id)}&status=active`);
+        let data = await res.json();
+        let myActive = data.bookings || [];
+
+        // If no bookings match ID, try matching by Email to catch legacy/inconsistent records
+        if (myActive.length === 0 && user.email) {
+          const resEmail = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/all?userId=${encodeURIComponent(user.email)}&status=active`);
+          const dataEmail = await resEmail.json();
+          if (dataEmail.bookings?.length > 0) {
+            myActive = dataEmail.bookings;
+          }
         }
+
+        const normalizedActive = myActive.map((b: any) => ({
+          ...b,
+          id: b.id || b.ticketId || b._id,
+          startTime: b.startTime || b.entryTime,
+          endTime: b.endTime || b.expectedExit,
+          totalCost: b.totalCost || b.paidAmount || 0
+        }));
+        
+        setActiveBookings(normalizedActive);
+        localStorage.setItem('parkflow_bookings', JSON.stringify(normalizedActive));
       } catch (error) {
         console.error("Failed to fetch active bookings", error);
       }
