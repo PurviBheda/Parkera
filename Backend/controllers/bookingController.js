@@ -30,6 +30,13 @@ export const createBooking = async (req, res) => {
 
     console.log("🎟️ Booking Created:", savedBooking._id);
 
+    // Update Slot status if exists
+    try {
+      await Slot.findOneAndUpdate({ slotNumber: slotId }, { isOccupied: true });
+    } catch (slotErr) {
+      console.log("⚠️ Slot update skipped (not critical):", slotErr.message);
+    }
+
     // Fire Autonomous Confirmation Email
     if (finalEmail) {
       setImmediate(() => {
@@ -130,17 +137,21 @@ export const getBookingHistory = async (req, res) => {
 
 export const getAllBookings = async (req, res) => {
   try {
-    const { userId, status } = req.query;
+    const { userId, areaId, status } = req.query;
     let query = {};
     if (userId) {
       query.$or = [{ userId: userId }, { userEmail: userId }];
+    }
+    if (areaId) {
+      query.areaId = areaId;
     }
     if (status) {
       query.status = status;
     }
 
-    // Limit to 50 for safety if no specific user is requested, or sort for recency
-    const bookings = await Booking.find(query).sort({ entryTime: -1 }).limit(userId ? 0 : 50);
+    // If fetching for a specific user, we return all matches. 
+    // If fetching globally for an area, we return all active ones.
+    const bookings = await Booking.find(query).sort({ entryTime: -1 }).limit(userId || areaId ? 0 : 50);
     res.json({ bookings });
   } catch (error) {
     res.status(500).json({ message: error.message });

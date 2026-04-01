@@ -18,7 +18,7 @@ import QRCodeImage from '../../assets/QR code.jpg';
 export const BookingFlow = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { selectedArea, activeBookings, addBooking } = useBooking();
+  const { selectedArea, activeBookings, allActiveBookings, addBooking, fetchAllActiveBookings } = useBooking();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [vehicleType, setVehicleType] = useState<'car' | 'bike' | 'scooty'>('car');
@@ -103,6 +103,8 @@ export const BookingFlow = () => {
         .then(res => res.json())
         .then(data => setEtaReservedSlots(data.reservations || []))
         .catch(err => console.error("Failed to fetch ETA reservations:", err));
+
+      fetchAllActiveBookings(areaIdentifier);
     }
 
     const userId = (user as any)?._id || user?.email;
@@ -165,7 +167,7 @@ export const BookingFlow = () => {
 
   // Calculate occupied slots per vehicle type for the selected area
   const areaIdentifier = (selectedArea as any)?._id || selectedArea?.id;
-  const occupiedSlots = activeBookings.reduce((acc, b) => {
+  const occupiedSlots = allActiveBookings.reduce((acc, b) => {
     if (b.areaId === areaIdentifier && b.status === 'active') {
       if (b.vehicleType === 'car') acc.car++;
       if (b.vehicleType === 'bike') acc.bike++;
@@ -298,7 +300,7 @@ export const BookingFlow = () => {
 
     addBooking({
       id,
-      userId: (user as any)?._id || user?.email || 'unknown',
+      userId: (user as any)?.id || (user as any)?._id || user?.email || 'unknown',
       areaId: (selectedArea as any)?._id || selectedArea?.id,
       areaName: selectedArea.name,
       vehicleType,
@@ -317,7 +319,7 @@ export const BookingFlow = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: (user as any)?._id || user?.email || 'guest',
+          userId: (user as any)?.id || (user as any)?._id || user?.email || 'guest',
           ticketId: id,
           userEmail: user?.email,
           userName: (user as any)?.name || 'Guest',
@@ -426,7 +428,7 @@ export const BookingFlow = () => {
                     {Array.from({ length: selectedArea.availableSlots[vehicleType] }).map((_, i) => {
                       const id = `${vehicleType.toUpperCase()[0]}-${i + 1}`;
                       const areaIdentifier = (selectedArea as any)?._id || selectedArea?.id;
-                      const isOccupiedByBooking = activeBookings.some(b => b.areaId === areaIdentifier && b.vehicleType === vehicleType && b.slotId === id && b.status === "active");
+                      const isOccupiedByBooking = allActiveBookings.some(b => b.areaId === areaIdentifier && b.vehicleType === vehicleType && b.slotId === id && b.status === "active");
                       const isOccupiedByPass = reservedPassSlots.includes(id);
                       const isOccupied = isOccupiedByBooking || isOccupiedByPass;
 

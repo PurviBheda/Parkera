@@ -101,6 +101,13 @@ export const createReservation = async (req, res) => {
         const savedReservation = await newReservation.save();
         console.log("🎟️ Reservation Created:", savedReservation._id);
 
+        // Update Slot status if exists
+        try {
+            await Slot.findOneAndUpdate({ slotNumber: slotId }, { isOccupied: true });
+        } catch (slotErr) {
+            console.log("⚠️ Slot update skipped (not critical):", slotErr.message);
+        }
+
         // Send Confirmation Email
         const finalEmail = userEmail || userId;
         if (finalEmail && finalEmail.includes("@")) {
@@ -149,6 +156,13 @@ export const checkInArrival = async (req, res) => {
         });
 
         const savedBooking = await newBooking.save();
+
+        // Update Slot status (already true but ensures consistency)
+        try {
+            await Slot.findOneAndUpdate({ slotNumber: reservation.slotId }, { isOccupied: true });
+        } catch (slotErr) {
+            console.log("⚠️ Slot update skipped (not critical):", slotErr.message);
+        }
 
         // Send Booking Confirmation Email
         const finalEmail = userEmail || userId;

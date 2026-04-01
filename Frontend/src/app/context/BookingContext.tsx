@@ -9,7 +9,9 @@ interface BookingContextType {
   currentBooking: Partial<Booking> | null;
   setCurrentBooking: (booking: Partial<Booking> | null) => void;
   activeBookings: Booking[];
+  allActiveBookings: Booking[];
   addBooking: (booking: Booking) => void;
+  fetchAllActiveBookings: (areaId: string) => Promise<void>;
   completeBooking: (id: string, exitTime: string, penalty: number) => void;
   submitFeedback: (id: string, rating: number) => void;
 }
@@ -24,6 +26,7 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const saved = localStorage.getItem('parkflow_bookings');
     return saved ? JSON.parse(saved) : [];
   });
+  const [allActiveBookings, setAllActiveBookings] = useState<Booking[]>([]);
 
   useEffect(() => {
     const fetchAreas = async () => {
@@ -39,12 +42,13 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     const fetchActiveBookings = async () => {
-      const user = JSON.parse(localStorage.getItem("parkflow_user") || "{}");
-      const userId = user.id || user.email;
+      const userStr = localStorage.getItem("parkflow_user");
+      if (!userStr) return;
+      const user = JSON.parse(userStr);
+      const userId = user.id || user._id || user.email;
       if (!userId) return;
 
       try {
-        // Fetch only active bookings for the current user (Optimized)
         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/all?userId=${encodeURIComponent(userId)}&status=active`);
         if (res.ok) {
           const data = await res.json();
@@ -67,6 +71,18 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchAreas();
     fetchActiveBookings();
   }, []);
+
+  const fetchAllActiveBookings = async (areaId: string) => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/all?areaId=${encodeURIComponent(areaId)}&status=active`);
+      if (res.ok) {
+        const data = await res.json();
+        setAllActiveBookings(data.bookings || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch all active bookings", error);
+    }
+  };
 
   // Removed hardcoded activeBookings.filter for slotsToClear
 
@@ -119,7 +135,7 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       parkingAreas, setParkingAreas,
       selectedArea, setSelectedArea,
       currentBooking, setCurrentBooking,
-      activeBookings, addBooking, completeBooking, submitFeedback
+      activeBookings, allActiveBookings, addBooking, fetchAllActiveBookings, completeBooking, submitFeedback
     }}>
       {children}
     </BookingContext.Provider>

@@ -175,7 +175,7 @@ export const UserDashboard = () => {
   const { activeBookings, completeBooking, submitFeedback } = useBooking();
   const navigate = useNavigate();
 
-  const currentUserIdentifier = (user as any)?._id || user?.email;
+  const currentUserIdentifier = (user as any)?.id || (user as any)?._id || user?.email;
   const myActiveBookings = activeBookings.filter((b: any) =>
     b.status === "active" && (b.userId === currentUserIdentifier || b.userEmail === user?.email)
   );
@@ -201,7 +201,7 @@ export const UserDashboard = () => {
 
   useEffect(() => {
     if (user) {
-      const uId = (user as any)?._id || user.email;
+      const uId = (user as any)?.id || (user as any)?._id || user.email;
       fetch(`${import.meta.env.VITE_API_URL}/api/passes/my-pass/${encodeURIComponent(uId)}`)
         .then(res => res.json())
         .then(data => {
@@ -257,7 +257,7 @@ export const UserDashboard = () => {
       setExitModal(null);
       
       if (user) {
-        fetchHistory((user as any)?._id || user.email);
+        fetchHistory((user as any)?.id || (user as any)?._id || user.email);
       }
 
     } catch (err) {
