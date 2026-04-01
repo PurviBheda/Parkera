@@ -313,7 +313,6 @@ export const BookingFlow = () => {
       status: 'active'
     });
 
-    // 2. Save Booking to Backend to Trigger Confirmation Email and Cron Jobs
     try {
       await fetch(`${import.meta.env.VITE_API_URL}/api/bookings`, {
         method: 'POST',
@@ -321,6 +320,7 @@ export const BookingFlow = () => {
         body: JSON.stringify({
           userId: (user as any)?.id || (user as any)?._id || user?.email || 'guest',
           ticketId: id,
+          areaId: areaIdentifier,
           userEmail: user?.email,
           userName: (user as any)?.name || 'Guest',
           slotId: selectedSlot,
