@@ -39,8 +39,11 @@ export const BookingFlow = () => {
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const isPremiumUser = (user as any)?.role === 'premium' || (user as any)?.isPremium;
 
-  const currentUserIdentifier = (user as any)?._id || user?.email || 'unknown';
-  const hasActiveSession = activeBookings.some(b => b.userId === currentUserIdentifier && b.status === 'active');
+  const currentUserIdentifier = user?.id || (user as any)?._id || user?.email || 'unknown';
+  const hasActiveSession = activeBookings.some(b => 
+    (b.userId === currentUserIdentifier || b.userEmail === user?.email) && 
+    b.status === 'active'
+  );
 
   // Payment States
   const [cardDetails, setCardDetails] = useState(() => {
@@ -500,14 +503,26 @@ export const BookingFlow = () => {
                 <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4">
                   <button
                     disabled={!selectedSlot}
-                    onClick={handleReserveSlot}
+                    onClick={() => {
+                      if (hasActiveSession) {
+                        setShowWarning(true);
+                      } else {
+                        handleReserveSlot();
+                      }
+                    }}
                     className="bg-orange-500 text-white px-8 py-5 rounded-2xl font-black shadow-xl shadow-orange-500/20 hover:scale-[1.05] active:scale-[0.95] transition-all flex items-center space-x-3 disabled:bg-gray-200 disabled:scale-100"
                   >
                     {isProcessing ? <span>{t('Calculating ETA...')}</span> : <span>{t('Reserve Slot (ETA)')}</span>}
                   </button>
                   <button
                     disabled={!selectedSlot}
-                    onClick={() => setStep(2)}
+                    onClick={() => {
+                      if (hasActiveSession) {
+                        setShowWarning(true);
+                      } else {
+                        setStep(2);
+                      }
+                    }}
                     className="bg-black text-white px-8 py-5 rounded-2xl font-black shadow-xl shadow-black/10 hover:scale-[1.05] active:scale-[0.95] transition-all flex items-center space-x-3 disabled:bg-gray-200 disabled:scale-100"
                   >
                     <span>{t('Instant Booking')}</span>
