@@ -280,7 +280,6 @@ export const BookingFlow = () => {
       if (data.booking) {
         // Set default duration for Step 3
         setDuration(1);
-        setExitTime(addMinutes(new Date(), 60));
         
         setActiveReservation(null);
         setStep(3); // Redirect directly to Payment Page
