@@ -256,26 +256,34 @@ export const BookingFlow = () => {
   const handleCheckIn = async () => {
     setIsProcessing(true);
     // Since we arrived safely, we need to let the backend know so it stops the expiry cron block.
+    
+    // Start the API call
+    const checkInPromise = fetch(`${import.meta.env.VITE_API_URL}/api/reservations/check-in`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        reservationId: activeReservation._id,
+        expectedExit: addMinutes(new Date(), 60).toISOString(),
+        paidAmount: 0,
+        userEmail: user?.email,
+        areaName: selectedArea?.name
+      })
+    });
+
+    // Wait for at least 1 second for the "Checking In..." animation
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/reservations/check-in`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          reservationId: activeReservation._id,
-          expectedExit: addMinutes(new Date(), 60).toISOString(),
-          paidAmount: 0,
-          userEmail: user?.email,
-          areaName: selectedArea?.name
-        })
-      });
+      const res = await checkInPromise;
       const data = await res.json();
 
       if (data.booking) {
-        toast.success("Arrived Successfully! Redirecting to Payment...");
-        // The standard check-in flow is: Choose Duration -> Payment -> Confirmed.
-        // Move user to step 2 to pick duration and finalize payment.
+        // Set default duration for Step 3
+        setDuration(1);
+        setExitTime(addMinutes(new Date(), 60));
+        
         setActiveReservation(null);
-        setStep(2);
+        setStep(3); // Redirect directly to Payment Page
       } else {
         toast.error("Failed to sync check-in with the server.");
       }
