@@ -1,0 +1,12 @@
+Backend: npm run dev
+Frontend: npm run dev
+
+username: pnbheda924@gmail.com
+pass: purvi1
+
+username: urjapancholi@gmail.com
+pass: urja12
+
+//Admin
+username: pnuorg@gmail.com
+pass: pnu123
